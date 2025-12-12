@@ -1,39 +1,109 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Gempire Discovery</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const path = url.pathname.replace(/^\/+/, "");
 
-  <header>
-    <h1>Gempire Discovery</h1>
-    <p>Discover Pokémon cards across eBay</p>
-  </header>
+    // -------------------------
+    // ROOT HEALTH CHECK
+    // -------------------------
+    if (path === "") {
+      return new Response("Gempire Discovery API is live", {
+        headers: { "Content-Type": "text/plain" }
+      });
+    }
 
-  <section class="search-bar">
-    <input
-      id="searchInput"
-      type="text"
-      placeholder="Search Pokémon cards..."
-    />
-    <button onclick="runSearch()">Search</button>
-  </section>
+    // -------------------------
+    // SEARCH ENDPOINT
+    // /search?q=charizard psa
+    // -------------------------
+    if (path === "search") {
+      const q = url.searchParams.get("q");
 
-  <section class="controls">
-    <select id="sortSelect" onchange="runSearch()">
-      <option value="">Sort by</option>
-      <option value="newlyListed">Newly Listed</option>
-      <option value="endingSoon">Ending Soon</option>
-      <option value="priceHigh">Price: High → Low</option>
-      <option value="priceLow">Price: Low → High</option>
-    </select>
-  </section>
+      if (!q) {
+        return new Response(
+          JSON.stringify({ items: [] }),
+          { headers: { "Content-Type": "application/json" } }
+        );
+      }
 
-  <main id="results"></main>
+      // 🔑 CRITICAL FIX
+      const encodedQuery = encodeURIComponent(q);
 
-  <script src="app.js"></script>
-</body>
-</html>
+      const ebayUrl =
+        `https://api.ebay.com/buy/browse/v1/item_summary/search` +
+        `?q=${encodedQuery}` +
+        `&category_ids=183454` +
+        `&limit=24`;
+
+      const ebayRes = await fetch(ebayUrl, {
+        headers: {
+          "Authorization": `Bearer ${env.EBAY_TOKEN}`,
+          "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!ebayRes.ok) {
+        const errorText = await ebayRes.text();
+        return new Response(
+          JSON.stringify({
+            error: "eBay API error",
+            status: ebayRes.status,
+            details: errorText
+          }),
+          { headers: { "Content-Type": "application/json" } }
+        );
+      }
+
+      const data = await ebayRes.json();
+
+      const items = (data.itemSummaries || []).map(item => ({
+        id: item.itemId,
+        title: item.title,
+        price: item.price?.value,
+        currency: item.price?.currency,
+        image: item.image?.imageUrl,
+        condition: item.condition,
+        seller: item.seller?.username,
+        link: `/go/${item.itemId}`
+      }));
+
+      return new Response(
+        JSON.stringify({ items }),
+        { headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // -------------------------
+    // AFFILIATE REDIRECT
+    // /go/ITEM_ID
+    // -------------------------
+    if (path.startsWith("go/")) {
+      const itemId = path.split("go/")[1];
+
+      if (!itemId) {
+        return new Response("Missing item ID", { status: 400 });
+      }
+
+      const CAMPID = "5339113253";
+      const UL_REF = "https://rover.ebay.com/rover/1/711-53200-19255-0/1";
+
+      const redirectUrl =
+        `https://www.ebay.com/itm/${itemId}` +
+        `?mkcid=1` +
+        `&mkrid=711-53200-19255-0` +
+        `&siteid=0` +
+        `&campid=${CAMPID}` +
+        `&toolid=10001` +
+        `&customid=` +
+        `&ul_ref=${encodeURIComponent(UL_REF)}`;
+
+      return Response.redirect(redirectUrl, 302);
+    }
+
+    // -------------------------
+    // FALLBACK
+    // -------------------------
+    return new Response("Not found", { status: 404 });
+  }
+};
