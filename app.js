@@ -5,9 +5,12 @@ async function runSearch() {
   const sort = document.getElementById("sortSelect").value;
   const resultsEl = document.getElementById("results");
 
-  if (!query) return;
+  if (!query) {
+    resultsEl.innerHTML = "<p>Enter a search term.</p>";
+    return;
+  }
 
-  resultsEl.innerHTML = "Loading…";
+  resultsEl.innerHTML = "<p>Loading…</p>";
 
   let url = `${API_BASE}/search?q=${encodeURIComponent(query)}`;
   if (sort) url += `&sort=${sort}`;
@@ -16,22 +19,26 @@ async function runSearch() {
     const res = await fetch(url);
     const data = await res.json();
 
-    resultsEl.innerHTML = "";
+    if (!data.items || data.items.length === 0) {
+      resultsEl.innerHTML = "<p>No results found.</p>";
+      return;
+    }
 
-    data.items.forEach(item => {
-      const card = document.createElement("div");
-      card.className = "card";
+    resultsEl.innerHTML = data.items
+      .map(item => `
+        <a class="card" href="${API_BASE}/go/${item.id}" target="_blank">
+          <img src="${item.image}" alt="${item.title}" />
+          <div class="card-info">
+            <h3>${item.title}</h3>
+            <p class="price">$${item.price}</p>
+            <p class="condition">${item.condition}</p>
+          </div>
+        </a>
+      `)
+      .join("");
 
-      card.innerHTML = `
-        <img src="${item.image}" />
-        <h3>${item.title}</h3>
-        <div class="price">$${item.price}</div>
-        <a href="${item.link}" target="_blank">View on eBay</a>
-      `;
-
-      resultsEl.appendChild(card);
-    });
   } catch (err) {
-    resultsEl.innerHTML = "Error loading results";
+    console.error(err);
+    resultsEl.innerHTML = "<p>Error loading results.</p>";
   }
 }
