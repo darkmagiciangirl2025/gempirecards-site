@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gempire Discovery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <header>
+    <h1>Gempire Discovery</h1>
+    <p>Discover Pokémon cards across eBay</p>
+  </header>
+
+  <section class="search-bar">
+    <input
+      id="searchInput"
+      type="text"
+      placeholder="Search Pokémon cards..."
+    />
+    <button onclick="runSearch()">Search</button>
+  </section>
+
+  <section class="controls">
+    <select id="sortSelect" onchange="runSearch()">
+      <option value="">Sort by</option>
+      <option value="newlyListed">Newly Listed</option>
+      <option value="endingSoon">Ending Soon</option>
+      <option value="priceHigh">Price: High → Low</option>
+      <option value="priceLow">Price: Low → High</option>
+    </select>
+  </section>
+
+  <main id="results"></main>
+
+  <script src="app.js"></script>
+</body>
+</html>
