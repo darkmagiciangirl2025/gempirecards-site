@@ -11,8 +11,8 @@ async function runSearch() {
   resultsEl.innerHTML = "<p>Loading results...</p>";
 
   try {
-    // Build API URL
-    let apiUrl = `https://shop.gempirecards.com/search?q=${encodeURIComponent(query)}`;
+    // IMPORTANT: relative path → Cloudflare routes to Worker
+    let apiUrl = `/search?q=${encodeURIComponent(query)}`;
 
     if (sort) {
       apiUrl += `&sort=${sort}`;
@@ -21,7 +21,7 @@ async function runSearch() {
     const response = await fetch(apiUrl);
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      throw new Error(`API error ${response.status}`);
     }
 
     const data = await response.json();
@@ -47,11 +47,11 @@ async function runSearch() {
 
   } catch (err) {
     console.error("Search failed:", err);
-    resultsEl.innerHTML = "<p>Error loading results.</p>";
+    resultsEl.innerHTML = "<p>Error loading results</p>";
   }
 }
 
-// Optional: run search on Enter key
+// Allow Enter key search
 document.getElementById("searchInput").addEventListener("keydown", e => {
   if (e.key === "Enter") {
     runSearch();
