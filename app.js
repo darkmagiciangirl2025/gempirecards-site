@@ -3,38 +3,57 @@ async function runSearch() {
   const sort = document.getElementById("sortSelect").value;
   const resultsEl = document.getElementById("results");
 
-  if (!query) return;
+  if (!query) {
+    resultsEl.innerHTML = "";
+    return;
+  }
 
-  resultsEl.innerHTML = "Loading...";
+  resultsEl.innerHTML = "<p>Loading results...</p>";
 
   try {
-    let url = `https://shop.gempirecards.com/search?q=${encodeURIComponent(query)}`;
+    // Build API URL
+    let apiUrl = `https://shop.gempirecards.com/search?q=${encodeURIComponent(query)}`;
 
     if (sort) {
-      url += `&sort=${sort}`;
+      apiUrl += `&sort=${sort}`;
     }
 
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Bad response");
+    const response = await fetch(apiUrl);
 
-    const data = await res.json();
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
 
     if (!data.items || data.items.length === 0) {
-      resultsEl.innerHTML = "No results found";
+      resultsEl.innerHTML = "<p>No results found.</p>";
       return;
     }
 
-    resultsEl.innerHTML = data.items.map(item => `
-      <div class="card">
-        <img src="${item.image}" />
-        <h3>${item.title}</h3>
-        <p>$${item.price}</p>
-        <a href="${item.link}" target="_blank">View on eBay</a>
-      </div>
-    `).join("");
+    resultsEl.innerHTML = data.items
+      .map(item => `
+        <div class="card">
+          <img src="${item.image}" alt="${item.title}" />
+          <h3>${item.title}</h3>
+          <p class="price">$${item.price}</p>
+          <p class="seller">Seller: ${item.seller}</p>
+          <a href="${item.link}" target="_blank" rel="noopener">
+            View on eBay
+          </a>
+        </div>
+      `)
+      .join("");
 
   } catch (err) {
-    console.error(err);
-    resultsEl.innerHTML = "Error loading results";
+    console.error("Search failed:", err);
+    resultsEl.innerHTML = "<p>Error loading results.</p>";
   }
 }
+
+// Optional: run search on Enter key
+document.getElementById("searchInput").addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    runSearch();
+  }
+});
