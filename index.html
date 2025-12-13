@@ -3,86 +3,81 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gempire Discovery</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      background: #0b0d12;
-      color: #fff;
-      margin: 0;
-      padding: 20px;
-    }
-
-    h1 {
-      margin-bottom: 5px;
-    }
-
-    .search-bar {
-      display: flex;
-      gap: 10px;
-      margin: 20px 0;
-    }
-
-    input {
-      flex: 1;
-      padding: 12px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
-    }
-
-    button {
-      padding: 12px 18px;
-      font-size: 16px;
-      border-radius: 8px;
-      border: none;
-      cursor: pointer;
-      background: #f5c84c;
-      font-weight: 600;
-    }
-
-    #results {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 16px;
-      margin-top: 20px;
-    }
-
-    .card {
-      background: #141826;
-      padding: 12px;
-      border-radius: 12px;
-    }
-
-    .card img {
-      width: 100%;
-      border-radius: 8px;
-    }
-
-    .card a {
-      display: block;
-      margin-top: 8px;
-      color: #f5c84c;
-      text-decoration: none;
-      font-weight: 600;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
 
-  <h1>Gempire Discovery</h1>
-  <p>Search Pokémon cards across eBay</p>
+  <header>
+    <h1>Gempire Discovery</h1>
+    <p>Search Pokémon cards across eBay</p>
 
-  <div class="search-bar">
-    <input id="searchInput" type="text" placeholder="Search Pokémon cards…" />
-    <button id="searchBtn">Search</button>
-  </div>
+    <div class="search-bar">
+      <input id="searchInput" placeholder="charizard psa 10" />
+      <button id="searchBtn">Search</button>
+    </div>
 
-  <div id="results"></div>
+    <!-- FILTERS -->
+    <div class="filters">
 
-  <!-- IMPORTANT: script MUST be last -->
-  <script src="./app.js"></script>
+      <div class="filter-group">
+        <label>Grading</label>
+        <select id="gradingFilter">
+          <option value="">All</option>
+          <option value="PSA">PSA</option>
+          <option value="BGS">BGS</option>
+          <option value="CGC">CGC</option>
+          <option value="UNGRADED">Ungraded</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Grade</label>
+        <select id="gradeNumberFilter">
+          <option value="">All</option>
+          <option value="10">10</option>
+          <option value="9">9</option>
+          <option value="8">8</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Price ($)</label>
+        <input id="minPrice" type="number" placeholder="Min" />
+        <input id="maxPrice" type="number" placeholder="Max" />
+      </div>
+
+      <div class="filter-group">
+        <label>Listing Type</label>
+        <select id="listingType">
+          <option value="">All</option>
+          <option value="FIXED_PRICE">Buy It Now</option>
+          <option value="AUCTION">Auction</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>
+          <input type="checkbox" id="usOnly" />
+          US Only
+        </label>
+      </div>
+
+      <div class="filter-group">
+        <label>Sort</label>
+        <select id="sortBy">
+          <option value="">Default</option>
+          <option value="priceAsc">Price ↑</option>
+          <option value="priceDesc">Price ↓</option>
+        </select>
+      </div>
+
+    </div>
+  </header>
+
+  <main>
+    <div id="results"></div>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
