@@ -1,232 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Gempire Discovery</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<style>
-body {
-  margin: 0;
-  font-family: Inter, sans-serif;
-  background: #0e0f12;
-  color: #fff;
-}
-
-header {
-  padding: 20px 32px;
-  border-bottom: 1px solid #1f2025;
-}
-
-h1 { margin: 0; font-size: 22px; }
-p { color: #9ca3af; font-size: 13px; }
-
-.search-bar {
-  display: flex;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.search-bar input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  background: #14151a;
-  border: 1px solid #24262d;
-  color: white;
-}
-
-.search-bar button {
-  padding: 12px 18px;
-  background: #6366f1;
-  border-radius: 8px;
-  border: none;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.tabs {
-  display: flex;
-  gap: 18px;
-  padding: 14px 32px;
-  border-bottom: 1px solid #1f2025;
-}
-
-.tab {
-  font-size: 14px;
-  cursor: pointer;
-  color: #9ca3af;
-  border-bottom: 2px solid transparent;
-  padding-bottom: 8px;
-}
-
-.tab.active {
-  color: #fff;
-  border-color: #6366f1;
-}
-
-.layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 24px;
-  padding: 24px 32px;
-}
-
-aside {
-  background: #121318;
-  border: 1px solid #1f2025;
-  border-radius: 12px;
-  padding: 16px;
-}
-
-aside label {
-  font-size: 13px;
-  color: #9ca3af;
-  display: block;
-  margin-bottom: 6px;
-}
-
-aside select, aside input {
-  width: 100%;
-  margin-bottom: 12px;
-  padding: 8px;
-  background: #14151a;
-  border: 1px solid #24262d;
-  border-radius: 6px;
-  color: white;
-}
-
-.top-controls {
-  display: flex;
-  justify-content: flex-end;
-  margin-bottom: 16px;
-}
-
-.top-controls select {
-  padding: 8px;
-  background: #14151a;
-  border: 1px solid #24262d;
-  border-radius: 6px;
-  color: white;
-}
-
-main {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
-  gap: 20px;
-}
-
-.card {
-  background: #121318;
-  border-radius: 12px;
-  border: 1px solid #1f2025;
-  overflow: hidden;
-  position: relative;
-}
-
-.card img {
-  width: 100%;
-  aspect-ratio: 1/1;
-  object-fit: cover;
-}
-
-.heart {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-  font-size: 18px;
-  color: #9ca3af;
-}
-
-.heart.active {
-  color: #ef4444;
-}
-
-.card-body {
-  padding: 12px;
-}
-
-.card-title {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 6px;
-}
-
-.price {
-  font-weight: 700;
-  margin-bottom: 6px;
-}
-
-.card a {
-  color: #6366f1;
-  font-size: 13px;
-  text-decoration: none;
-}
-</style>
+  <meta charset="UTF-8" />
+  <title>Gempire Discovery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
-
 <body>
-<header>
-  <h1>Gempire Discovery</h1>
-  <p>Search Pokémon cards across eBay</p>
-  <div class="search-bar">
-    <input id="query" placeholder="pokemon psa">
-    <button onclick="newSearch()">Search</button>
-  </div>
-</header>
+  <header class="header">
+    <h1>Gempire Discovery</h1>
+    <p>Search Pokémon cards across eBay</p>
 
-<div class="tabs">
-  <div class="tab active" data-type="all">All Items</div>
-  <div class="tab" data-type="auction">Auctions</div>
-  <div class="tab" data-type="fixed">Fixed Price</div>
-</div>
-
-<div class="layout">
-  <aside>
-    <label>Grading</label>
-    <select id="grading">
-      <option value="">Any</option>
-      <option>PSA</option>
-      <option>BGS</option>
-      <option>CGC</option>
-    </select>
-
-    <label>Grade</label>
-    <select id="grade">
-      <option value="">Any</option>
-      <option>10</option>
-      <option>9</option>
-      <option>8</option>
-    </select>
-
-    <label>Min Price</label>
-    <input id="minPrice" type="number">
-
-    <label>Max Price</label>
-    <input id="maxPrice" type="number">
-
-    <label>
-      <input id="soldToggle" type="checkbox"> Sold listings
-    </label>
-  </aside>
-
-  <div>
-    <div class="top-controls">
-      <select id="sort" onchange="newSearch()">
-        <option value="relevance">Relevance</option>
-        <option value="price_asc">Price ↑</option>
-        <option value="price_desc">Price ↓</option>
-        <option value="newest">Newest</option>
-      </select>
+    <div class="search-bar">
+      <input id="searchInput" placeholder="pokemon psa" />
+      <button id="searchBtn">Search</button>
     </div>
 
-    <main id="results"></main>
-  </div>
-</div>
+    <div class="tabs">
+      <button class="tab active" data-type="all">All Items</button>
+      <button class="tab" data-type="auction">Auctions</button>
+      <button class="tab" data-type="fixed">Fixed Price</button>
+    </div>
+  </header>
 
-<script src="app.js"></script>
+  <main class="layout">
+    <aside class="filters">
+      <h3>Filters</h3>
+
+      <label>Grading</label>
+      <select id="grading">
+        <option value="">Any</option>
+        <option value="PSA">PSA</option>
+        <option value="BGS">BGS</option>
+        <option value="CGC">CGC</option>
+      </select>
+
+      <label>Grade</label>
+      <select id="grade">
+        <option value="">Any</option>
+        <option>10</option>
+        <option>9</option>
+        <option>8</option>
+      </select>
+
+      <label>Min Price</label>
+      <input id="minPrice" type="number" />
+
+      <label>Max Price</label>
+      <input id="maxPrice" type="number" />
+
+      <label class="checkbox">
+        <input type="checkbox" id="soldToggle" />
+        Sold listings
+      </label>
+    </aside>
+
+    <section class="content">
+      <div class="toolbar">
+        <select id="sort">
+          <option value="">Default</option>
+          <option value="price_asc">Price ↑</option>
+          <option value="price_desc">Price ↓</option>
+        </select>
+      </div>
+
+      <div id="results" class="grid"></div>
+
+      <div id="loading" class="loading">Loading…</div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
