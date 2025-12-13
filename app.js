@@ -1,81 +1,57 @@
-let offset = 0;
+let page = 1;
 let loading = false;
 let hasMore = true;
-let listingType = "";
-let sort = "";
 
-const grid = document.getElementById("grid");
-const loader = document.getElementById("loader");
+const results = document.getElementById("results");
+const loadingEl = document.getElementById("loading");
 
-async function loadItems(reset = false) {
+async function search(reset = true) {
   if (loading || !hasMore) return;
   loading = true;
-  loader.style.display = "block";
+  loadingEl.style.display = "block";
 
   if (reset) {
-    offset = 0;
+    page = 1;
     hasMore = true;
-    grid.innerHTML = "";
+    results.innerHTML = "";
   }
 
-  const q = document.getElementById("searchInput").value;
-  const minPrice = document.getElementById("minPrice").value;
-  const maxPrice = document.getElementById("maxPrice").value;
-  const sold = document.getElementById("soldToggle").checked ? "1" : "0";
-
   const params = new URLSearchParams({
-    q,
-    offset,
-    minPrice,
-    maxPrice,
-    sold,
-    listingType,
-    sort,
+    q: searchInput.value,
+    grading: grading.value,
+    grade: grade.value,
+    minPrice: minPrice.value,
+    maxPrice: maxPrice.value,
+    sold: soldToggle.checked,
+    sort: sort.value,
+    page
   });
 
-  const res = await fetch(`/api/search?${params}`);
+  const res = await fetch(`/functions/search?${params}`);
   const data = await res.json();
 
-  const items = data.itemSummaries || [];
-  if (items.length === 0) hasMore = false;
-
-  items.forEach(item => {
+  data.items.forEach(item => {
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
-      <img src="${item.image?.imageUrl || ""}" />
+      <img src="${item.image}">
       <h4>${item.title}</h4>
-      <p>$${item.price?.value || ""}</p>
-      <a href="${item.itemWebUrl}" target="_blank">View on eBay</a>
+      <div class="price">$${item.price}</div>
+      <a href="${item.url}" target="_blank">View on eBay</a>
     `;
-    grid.appendChild(card);
+    results.appendChild(card);
   });
 
-  offset += items.length;
+  if (data.items.length === 0) hasMore = false;
+
+  page++;
   loading = false;
-  loader.style.display = "none";
+  loadingEl.style.display = "none";
 }
 
-document.getElementById("searchBtn").onclick = () => loadItems(true);
-document.getElementById("sortSelect").onchange = e => {
-  sort = e.target.value;
-  loadItems(true);
-};
-
-document.querySelectorAll(".tab").forEach(btn => {
-  btn.onclick = () => {
-    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    listingType = btn.dataset.type;
-    loadItems(true);
-  };
-});
-
+searchBtn.onclick = () => search(true);
 window.addEventListener("scroll", () => {
-  if (
-    window.innerHeight + window.scrollY >=
-    document.body.offsetHeight - 400
-  ) {
-    loadItems();
+  if (window.innerHeight + window.scrollY > document.body.offsetHeight - 500) {
+    search(false);
   }
 });
