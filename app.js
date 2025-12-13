@@ -1,3 +1,4 @@
+const resultsWrapper = document.getElementById('resultsWrapper');
 const resultsEl = document.getElementById('results');
 const loadingEl = document.getElementById('loading');
 
@@ -21,8 +22,9 @@ const seenIds = new Set();
 
 /* ---------- SENTINEL ---------- */
 const sentinel = document.createElement('div');
-sentinel.style.height = '1px';
-resultsEl.after(sentinel);
+sentinel.style.height = '40px';
+sentinel.style.width = '100%';
+resultsWrapper.appendChild(sentinel);
 
 /* ---------- FETCH ---------- */
 async function fetchResults(reset = false) {
@@ -61,23 +63,23 @@ async function fetchResults(reset = false) {
       return;
     }
 
-    let appended = 0;
+    let added = 0;
 
     for (const item of items) {
       if (seenIds.has(item.itemId)) continue;
       seenIds.add(item.itemId);
       resultsEl.appendChild(renderCard(item));
-      appended++;
+      added++;
     }
 
     offset += items.length;
 
-    if (items.length < LIMIT || appended === 0) {
+    if (items.length < LIMIT || added === 0) {
       hasMore = false;
     }
 
   } catch (err) {
-    console.error('Fetch error:', err);
+    console.error(err);
   } finally {
     isFetching = false;
     loadingEl.style.display = 'none';
@@ -89,13 +91,10 @@ function renderCard(item) {
   const card = document.createElement('div');
   card.className = 'card';
 
-  const img = item.image?.imageUrl || '';
-  const price = item.price?.value ? `$${item.price.value}` : '';
-
   card.innerHTML = `
-    <img src="${img}" />
+    <img src="${item.image?.imageUrl || ''}">
     <h4>${item.title}</h4>
-    <div class="price">${price}</div>
+    <div class="price">${item.price?.value ? `$${item.price.value}` : ''}</div>
     <a href="${item.itemWebUrl}" target="_blank">View on eBay</a>
   `;
 
@@ -109,7 +108,11 @@ const observer = new IntersectionObserver(
       fetchResults();
     }
   },
-  { rootMargin: '800px' }
+  {
+    root: resultsWrapper, // ✅ THIS IS THE FIX
+    rootMargin: '400px',
+    threshold: 0
+  }
 );
 
 observer.observe(sentinel);
@@ -137,5 +140,5 @@ document.querySelectorAll('.tab').forEach(tab => {
   };
 });
 
-/* ---------- INITIAL LOAD ---------- */
+/* ---------- INITIAL ---------- */
 fetchResults(true);
