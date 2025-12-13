@@ -1,82 +1,59 @@
-export default {
-  async fetch(request, env) {
-    const url = new URL(request.url);
-    const path = url.pathname.replace(/^\/api\/?/, "");
+export async function onRequest(context) {
+  const { request, env } = context;
+  const url = new URL(request.url);
 
-    /* ---------------- HEALTH CHECK ---------------- */
-    if (path === "" || path === "/") {
-      return new Response("Gempire Discovery API is live", {
-        headers: { "Content-Type": "text/plain" },
-      });
-    }
+  const q = url.searchParams.get("q") || "";
+  const offset = Number(url.searchParams.get("offset") || 0);
+  const limit = 24;
 
-    /* ---------------- SEARCH ---------------- */
-    if (path === "search") {
-      const q = url.searchParams.get("q");
-      if (!q) {
-        return new Response(JSON.stringify({ items: [] }), {
-          headers: { "Content-Type": "application/json" },
-        });
-      }
+  const minPrice = url.searchParams.get("minPrice");
+  const maxPrice = url.searchParams.get("maxPrice");
+  const sold = url.searchParams.get("sold") === "1";
+  const listingType = url.searchParams.get("listingType"); // auction | fixed
+  const sort = url.searchParams.get("sort"); // priceAsc | priceDesc | endSoonest
 
-      const ebayUrl =
-        "https://api.ebay.com/buy/browse/v1/item_summary/search" +
-        `?q=${encodeURIComponent(q)}` +
-        "&category_ids=183454" +
-        "&limit=24";
+  let filter = `categoryIds:{183454}`;
+  if (minPrice) filter += `,price:[${minPrice}..]`;
+  if (maxPrice) filter += `,price:[..${maxPrice}]`;
+  if (listingType === "auction") filter += `,buyingOptions:{AUCTION}`;
+  if (listingType === "fixed") filter += `,buyingOptions:{FIXED_PRICE}`;
+  if (sold) filter += `,soldItemsOnly:true`;
 
-      const ebayRes = await fetch(ebayUrl, {
-        headers: {
-          Authorization: `Bearer ${env.EBAY_TOKEN}`,
-          "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
-        },
-      });
+  let sortParam = "";
+  if (sort === "priceAsc") sortParam = "sort=price";
+  if (sort === "priceDesc") sortParam = "sort=-price";
+  if (sort === "endSoonest") sortParam = "sort=endTime";
 
-      if (!ebayRes.ok) {
-        const text = await ebayRes.text();
-        return new Response(
-          JSON.stringify({ error: "eBay API error", details: text }),
-          { headers: { "Content-Type": "application/json" } }
-        );
-      }
+  const ebayUrl =
+    `https://api.ebay.com/buy/browse/v1/item_summary/search` +
+    `?q=${encodeURIComponent(q)}` +
+    `&limit=${limit}` +
+    `&offset=${offset}` +
+    `&filter=${encodeURIComponent(filter)}` +
+    (sortParam ? `&${sortParam}` : "");
 
-      const data = await ebayRes.json();
+  const tokenRes = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
+    method: "POST",
+    headers: {
+      Authorization:
+        "Basic " +
+        btoa(`${env.EBAY_CLIENT_ID}:${env.EBAY_CLIENT_SECRET}`),
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope",
+  });
 
-      const items = (data.itemSummaries || []).map(item => ({
-        id: item.itemId,
-        title: item.title,
-        price: item.price?.value,
-        currency: item.price?.currency,
-        image: item.image?.imageUrl,
-        condition: item.condition,
-        seller: item.seller?.username,
-        link: `/api/go/${item.itemId}`,
-      }));
+  const tokenJson = await tokenRes.json();
 
-      return new Response(JSON.stringify({ items }), {
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+  const ebayRes = await fetch(ebayUrl, {
+    headers: {
+      Authorization: `Bearer ${tokenJson.access_token}`,
+    },
+  });
 
-    /* ---------------- AFFILIATE REDIRECT ---------------- */
-    if (path.startsWith("go/")) {
-      const itemId = path.split("go/")[1];
-      if (!itemId) {
-        return new Response("Missing item ID", { status: 400 });
-      }
+  const data = await ebayRes.json();
 
-      const CAMPID = "5339113253"; // your EPN campaign ID
-
-      const redirectUrl =
-        `https://www.ebay.com/itm/${itemId}` +
-        `?mkcid=1&mkrid=711-53200-19255-0` +
-        `&campid=${CAMPID}` +
-        `&toolid=10001`;
-
-      return Response.redirect(redirectUrl, 302);
-    }
-
-    /* ---------------- FALLBACK ---------------- */
-    return new Response("Not found", { status: 404 });
-  },
-};
+  return new Response(JSON.stringify(data), {
+    headers: { "Content-Type": "application/json" },
+  });
+}
