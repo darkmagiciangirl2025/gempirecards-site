@@ -7,71 +7,52 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <header class="header">
+    <h1>Gempire Discovery</h1>
+    <p>Search Pokémon cards across eBay</p>
 
-<header class="header">
-  <h1>Gempire Discovery</h1>
-  <p>Search Pokémon cards across eBay</p>
+    <div class="search-row">
+      <input id="searchInput" placeholder="pokemon psa" />
+      <button id="searchBtn">Search</button>
+    </div>
 
-  <div class="search-row">
-    <input id="searchInput" placeholder="pokemon psa" />
-    <button id="searchBtn">Search</button>
-  </div>
+    <div class="tabs">
+      <button class="tab active" data-type="all">All Items</button>
+      <button class="tab" data-type="auction">Auctions</button>
+      <button class="tab" data-type="fixed">Fixed Price</button>
+    </div>
+  </header>
 
-  <div class="tabs">
-    <button class="tab active" data-type="all">All Items</button>
-    <button class="tab" data-type="auction">Auctions</button>
-    <button class="tab" data-type="fixed">Fixed Price</button>
-  </div>
-</header>
+  <main class="layout">
+    <aside class="filters">
+      <h3>Filters</h3>
 
-<main class="layout">
-  <aside class="filters">
-    <h3>Filters</h3>
+      <label>Min Price</label>
+      <input id="minPrice" type="number" />
 
-    <label>Grading</label>
-    <select id="grading">
-      <option value="">Any</option>
-      <option value="PSA">PSA</option>
-      <option value="BGS">BGS</option>
-      <option value="CGC">CGC</option>
-    </select>
+      <label>Max Price</label>
+      <input id="maxPrice" type="number" />
 
-    <label>Grade</label>
-    <select id="grade">
-      <option value="">Any</option>
-      <option value="10">10</option>
-      <option value="9">9</option>
-      <option value="8">8</option>
-    </select>
+      <label>
+        <input type="checkbox" id="soldToggle" />
+        Sold listings
+      </label>
 
-    <label>Min Price</label>
-    <input id="minPrice" type="number" />
-
-    <label>Max Price</label>
-    <input id="maxPrice" type="number" />
-
-    <label class="checkbox">
-      <input type="checkbox" id="soldToggle" />
-      Sold listings
-    </label>
-  </aside>
-
-  <section class="results-area">
-    <div class="results-header">
-      <select id="sort">
+      <label>Sort</label>
+      <select id="sortSelect">
         <option value="best">Best Match</option>
         <option value="price_asc">Price ↑</option>
         <option value="price_desc">Price ↓</option>
         <option value="newest">Newest</option>
       </select>
-    </div>
+    </aside>
 
-    <div id="results" class="grid"></div>
+    <section class="results">
+      <div id="grid" class="grid"></div>
+      <div id="loader" class="loader">Loading…</div>
+    </section>
+  </main>
 
-    <div id="loading" class="loading">Loading…</div>
-  </section>
-</main>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
