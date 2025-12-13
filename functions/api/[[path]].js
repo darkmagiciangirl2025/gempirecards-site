@@ -1,40 +1,83 @@
-export async function onRequest(context) {
-  const { searchParams } = new URL(context.request.url);
+export async function onRequestGet({ request, env }) {
+  try {
+    const { searchParams } = new URL(request.url);
 
-  const q = searchParams.get("q");
-  const min = searchParams.get("minPrice");
-  const max = searchParams.get("maxPrice");
-  const sold = searchParams.get("sold") === "true";
-  const sort = searchParams.get("sort");
-  const page = Number(searchParams.get("page") || 1);
+    const q = searchParams.get("q") || "pokemon";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const perPage = 24;
 
-  let filter = [];
-  if (min) filter.push(`price:[${min}..]`);
-  if (max) filter.push(`price:[..${max}]`);
-  if (sold) filter.push("sold:true");
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    const sold = searchParams.get("sold") === "true";
+    const sort = searchParams.get("sort") || "best";
+    const type = searchParams.get("type") || "all"; // all | auction | fixed
 
-  let sortMap = {
-    price_asc: "price",
-    price_desc: "-price",
-    newest: "-endTime"
-  };
+    const ebayParams = new URLSearchParams({
+      q,
+      limit: perPage.toString(),
+      offset: ((page - 1) * perPage).toString(),
+    });
 
-  const ebayURL = `https://api.ebay.com/buy/browse/v1/item_summary/search?q=${encodeURIComponent(q)}&limit=24&offset=${(page-1)*24}${filter.length ? `&filter=${filter.join(",")}` : ""}${sortMap[sort] ? `&sort=${sortMap[sort]}` : ""}`;
+    if (minPrice) ebayParams.append("priceFrom", minPrice);
+    if (maxPrice) ebayParams.append("priceTo", maxPrice);
 
-  const ebayRes = await fetch(ebayURL, {
-    headers: {
-      Authorization: `Bearer ${context.env.EBAY_TOKEN}`
+    if (type === "auction") ebayParams.append("buyingOptions", "AUCTION");
+    if (type === "fixed") ebayParams.append("buyingOptions", "FIXED_PRICE");
+
+    if (sold) ebayParams.append("soldItemsOnly", "true");
+
+    if (sort === "price_asc") ebayParams.append("sort", "price");
+    if (sort === "price_desc") ebayParams.append("sort", "-price");
+    if (sort === "newest") ebayParams.append("sort", "newlyListed");
+
+    const ebayRes = await fetch(
+      `https://api.ebay.com/buy/browse/v1/item_summary/search?${ebayParams.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${env.EBAY_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!ebayRes.ok) {
+      return json({ items: [], error: "eBay API error" }, 200);
     }
+
+    const data = await ebayRes.json();
+
+    const items = (data.itemSummaries || []).map((item) => ({
+      id: item.itemId,
+      title: item.title,
+      price: item.price?.value ? Number(item.price.value) : null,
+      currency: item.price?.currency || "USD",
+      image: item.image?.imageUrl || "",
+      url: item.itemWebUrl,
+    }));
+
+    return json({
+      items,
+      page,
+      hasMore: items.length === perPage,
+    });
+  } catch (err) {
+    return json(
+      {
+        items: [],
+        error: "Server error",
+        message: err.message,
+      },
+      200
+    );
+  }
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
   });
-
-  const json = await ebayRes.json();
-
-  return new Response(JSON.stringify({
-    items: (json.itemSummaries || []).map(i => ({
-      title: i.title,
-      price: i.price?.value,
-      image: i.image?.imageUrl,
-      url: i.itemWebUrl
-    }))
-  }), { headers: { "Content-Type": "application/json" } });
 }
