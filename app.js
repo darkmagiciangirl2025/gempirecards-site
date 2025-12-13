@@ -1,75 +1,56 @@
-// app.js
-// Gempire Discovery frontend logic
-// Talks to /api/search and /api/go/:itemId
+console.log("app.js loaded");
 
-document.addEventListener("DOMContentLoaded", () => {
-  const searchInput = document.getElementById("searchInput");
-  const searchBtn = document.getElementById("searchBtn");
-  const resultsEl = document.getElementById("results");
-  const statusEl = document.getElementById("status");
+const resultsEl = document.getElementById("results");
+const searchBtn = document.getElementById("searchBtn");
+const searchInput = document.getElementById("searchInput");
 
-  async function runSearch() {
-    const query = searchInput.value.trim();
-    if (!query) return;
+async function runSearch() {
+  const query = searchInput.value.trim();
 
-    statusEl.textContent = "Searching eBay…";
-    resultsEl.innerHTML = "";
-
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-
-      if (!res.ok) {
-        throw new Error(`API error (${res.status})`);
-      }
-
-      const data = await res.json();
-
-      if (!data.items || data.items.length === 0) {
-        statusEl.textContent = "No results found.";
-        return;
-      }
-
-      statusEl.textContent = `Showing ${data.items.length} results`;
-
-      data.items.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "result-card";
-
-        card.innerHTML = `
-          <img src="${item.image}" alt="${item.title}" />
-          <div class="result-info">
-            <h3>${item.title}</h3>
-            <p class="price">$${item.price}</p>
-            <p class="meta">
-              ${item.condition || "Unknown condition"} · ${item.seller}
-            </p>
-            <a
-              href="${item.link}"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="buy-btn"
-            >
-              View on eBay →
-            </a>
-          </div>
-        `;
-
-        resultsEl.appendChild(card);
-      });
-
-    } catch (err) {
-      console.error(err);
-      statusEl.textContent = "Something went wrong. Check console.";
-    }
+  if (!query) {
+    alert("Enter a search term");
+    return;
   }
 
-  // Click search
-  searchBtn.addEventListener("click", runSearch);
+  console.log("Searching for:", query);
+  resultsEl.innerHTML = "Loading…";
 
-  // Enter key search
-  searchInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      runSearch();
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+
+    console.log("API response:", data);
+
+    if (!data.items || data.items.length === 0) {
+      resultsEl.innerHTML = "No results found.";
+      return;
     }
-  });
+
+    resultsEl.innerHTML = "";
+
+    data.items.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "card";
+
+      div.innerHTML = `
+        <img src="${item.image}" />
+        <div>${item.title}</div>
+        <div>$${item.price}</div>
+        <a href="${item.url}" target="_blank">View on eBay</a>
+      `;
+
+      resultsEl.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error(err);
+    resultsEl.innerHTML = "Error loading results.";
+  }
+}
+
+searchBtn.addEventListener("click", runSearch);
+
+// allow Enter key
+searchInput.addEventListener("keydown", e => {
+  if (e.key === "Enter") runSearch();
 });
