@@ -3,153 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gempire Discovery</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <!-- Styles -->
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <style>
     body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0b0d12;
+      color: #fff;
       margin: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background: #0b0b0b;
-      color: #ffffff;
-    }
-
-    header {
-      padding: 32px;
-      border-bottom: 1px solid #222;
+      padding: 20px;
     }
 
     h1 {
-      margin: 0 0 8px 0;
-      font-size: 32px;
-    }
-
-    .sub {
-      color: #aaa;
+      margin-bottom: 5px;
     }
 
     .search-bar {
       display: flex;
-      gap: 8px;
-      margin-top: 20px;
-      max-width: 600px;
+      gap: 10px;
+      margin: 20px 0;
     }
 
     input {
       flex: 1;
       padding: 12px;
-      background: #111;
-      color: #fff;
-      border: 1px solid #333;
-      border-radius: 4px;
       font-size: 16px;
+      border-radius: 8px;
+      border: none;
     }
 
     button {
       padding: 12px 18px;
-      background: #ffffff;
-      color: #000;
-      border: none;
-      border-radius: 4px;
       font-size: 16px;
+      border-radius: 8px;
+      border: none;
       cursor: pointer;
-    }
-
-    button:hover {
-      opacity: 0.85;
-    }
-
-    #status {
-      padding: 16px 32px;
-      color: #aaa;
+      background: #f5c84c;
+      font-weight: 600;
     }
 
     #results {
-      padding: 32px;
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
+      gap: 16px;
+      margin-top: 20px;
     }
 
-    .result-card {
-      background: #111;
-      border: 1px solid #222;
-      border-radius: 6px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .result-card img {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
-      background: #000;
-    }
-
-    .result-info {
+    .card {
+      background: #141826;
       padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+      border-radius: 12px;
     }
 
-    .result-info h3 {
-      font-size: 14px;
-      margin: 0;
-      line-height: 1.3;
+    .card img {
+      width: 100%;
+      border-radius: 8px;
     }
 
-    .price {
-      font-weight: bold;
-      font-size: 15px;
-    }
-
-    .meta {
-      font-size: 12px;
-      color: #aaa;
-    }
-
-    .buy-btn {
-      margin-top: auto;
+    .card a {
+      display: block;
+      margin-top: 8px;
+      color: #f5c84c;
       text-decoration: none;
-      padding: 10px;
-      text-align: center;
-      border-radius: 4px;
-      background: #ffffff;
-      color: #000;
-      font-weight: bold;
-    }
-
-    .buy-btn:hover {
-      opacity: 0.85;
+      font-weight: 600;
     }
   </style>
 </head>
 
 <body>
 
-  <header>
-    <h1>Gempire Discovery</h1>
-    <div class="sub">Discover Pokémon cards across eBay</div>
+  <h1>Gempire Discovery</h1>
+  <p>Search Pokémon cards across eBay</p>
 
-    <div class="search-bar">
-      <input
-        id="searchInput"
-        type="text"
-        placeholder="Search Pokémon cards (e.g. Charizard PSA 10)"
-      />
-      <button id="searchBtn">Search</button>
-    </div>
-  </header>
-
-  <div id="status"></div>
+  <div class="search-bar">
+    <input id="searchInput" type="text" placeholder="Search Pokémon cards…" />
+    <button id="searchBtn">Search</button>
+  </div>
 
   <div id="results"></div>
 
-  <!-- App logic -->
-  <script src="app.js"></script>
+  <!-- IMPORTANT: script MUST be last -->
+  <script src="./app.js"></script>
 </body>
 </html>
