@@ -1,6 +1,7 @@
 let page = 0;
 let loading = false;
 let listingType = "all";
+
 let watchlist = JSON.parse(localStorage.getItem("watchlist") || "[]");
 
 document.querySelectorAll(".tab").forEach(tab => {
@@ -18,11 +19,24 @@ function newSearch() {
   runSearch();
 }
 
+function mapSort(uiSort) {
+  switch (uiSort) {
+    case "price_asc":
+      return "price";
+    case "price_desc":
+      return "-price";
+    case "newest":
+      return "newlyListed";
+    default:
+      return "relevance";
+  }
+}
+
 async function runSearch() {
   if (loading) return;
   loading = true;
 
-  const q = document.getElementById("query").value;
+  const q = document.getElementById("query").value.trim();
   let query = q;
 
   const grading = document.getElementById("grading").value;
@@ -30,7 +44,9 @@ async function runSearch() {
   const min = document.getElementById("minPrice").value;
   const max = document.getElementById("maxPrice").value;
   const sold = document.getElementById("soldToggle").checked;
-  const sort = document.getElementById("sort").value;
+
+  const uiSort = document.getElementById("sort").value;
+  const sort = mapSort(uiSort);
 
   if (grading) query += ` ${grading}`;
   if (grade) query += ` ${grade}`;
