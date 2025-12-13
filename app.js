@@ -1,57 +1,81 @@
 let page = 1;
 let loading = false;
 let hasMore = true;
+let currentType = "all";
 
-const results = document.getElementById("results");
-const loadingEl = document.getElementById("loading");
+const grid = document.getElementById("grid");
+const loader = document.getElementById("loader");
 
-async function search(reset = true) {
+async function loadResults(reset = false) {
   if (loading || !hasMore) return;
   loading = true;
-  loadingEl.style.display = "block";
+  loader.style.display = "block";
 
   if (reset) {
     page = 1;
     hasMore = true;
-    results.innerHTML = "";
+    grid.innerHTML = "";
   }
 
+  const q = document.getElementById("searchInput").value || "pokemon";
+  const minPrice = document.getElementById("minPrice").value;
+  const maxPrice = document.getElementById("maxPrice").value;
+  const sold = document.getElementById("soldToggle").checked;
+  const sort = document.getElementById("sortSelect").value;
+
   const params = new URLSearchParams({
-    q: searchInput.value,
-    grading: grading.value,
-    grade: grade.value,
-    minPrice: minPrice.value,
-    maxPrice: maxPrice.value,
-    sold: soldToggle.checked,
-    sort: sort.value,
-    page
+    q,
+    page,
+    type: currentType,
+    sort,
+    sold
   });
 
-  const res = await fetch(`/functions/search?${params}`);
+  if (minPrice) params.append("minPrice", minPrice);
+  if (maxPrice) params.append("maxPrice", maxPrice);
+
+  const res = await fetch(`/functions/search?${params.toString()}`);
   const data = await res.json();
 
   data.items.forEach(item => {
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `
-      <img src="${item.image}">
+      <img src="${item.image}" />
       <h4>${item.title}</h4>
-      <div class="price">$${item.price}</div>
+      <p>$${item.price ?? "—"}</p>
       <a href="${item.url}" target="_blank">View on eBay</a>
     `;
-    results.appendChild(card);
+    grid.appendChild(card);
   });
 
-  if (data.items.length === 0) hasMore = false;
-
+  hasMore = data.hasMore;
   page++;
   loading = false;
-  loadingEl.style.display = "none";
+  loader.style.display = "none";
 }
 
-searchBtn.onclick = () => search(true);
+document.getElementById("searchBtn").onclick = () => loadResults(true);
+
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    currentType = tab.dataset.type;
+    loadResults(true);
+  };
+});
+
+document.getElementById("sortSelect").onchange = () => loadResults(true);
+document.getElementById("soldToggle").onchange = () => loadResults(true);
+document.getElementById("minPrice").onchange = () => loadResults(true);
+document.getElementById("maxPrice").onchange = () => loadResults(true);
+
 window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY > document.body.offsetHeight - 500) {
-    search(false);
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 300) {
+    loadResults();
   }
 });
+
+// initial load
+loadResults(true);
