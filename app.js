@@ -6,14 +6,10 @@ const searchInput = document.getElementById("searchInput");
 
 async function runSearch() {
   const query = searchInput.value.trim();
+  if (!query) return alert("Enter a search term");
 
-  if (!query) {
-    alert("Enter a search term");
-    return;
-  }
-
-  console.log("Searching for:", query);
   resultsEl.innerHTML = "Loading…";
+  console.log("Searching:", query);
 
   try {
     const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
@@ -21,22 +17,33 @@ async function runSearch() {
 
     console.log("API response:", data);
 
-    if (!data.items || data.items.length === 0) {
+    const items = data.itemSummaries || [];
+
+    if (items.length === 0) {
       resultsEl.innerHTML = "No results found.";
       return;
     }
 
     resultsEl.innerHTML = "";
 
-    data.items.forEach(item => {
+    items.forEach(item => {
+      const image =
+        item.image?.imageUrl ||
+        item.thumbnailImages?.[0]?.imageUrl ||
+        "";
+
+      const price = item.price?.value
+        ? `$${item.price.value}`
+        : "—";
+
       const div = document.createElement("div");
       div.className = "card";
 
       div.innerHTML = `
-        <img src="${item.image}" />
+        <img src="${image}" />
         <div>${item.title}</div>
-        <div>$${item.price}</div>
-        <a href="${item.url}" target="_blank">View on eBay</a>
+        <div>${price}</div>
+        <a href="${item.itemWebUrl}" target="_blank">View on eBay</a>
       `;
 
       resultsEl.appendChild(div);
@@ -49,8 +56,6 @@ async function runSearch() {
 }
 
 searchBtn.addEventListener("click", runSearch);
-
-// allow Enter key
 searchInput.addEventListener("keydown", e => {
   if (e.key === "Enter") runSearch();
 });
