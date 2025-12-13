@@ -1,83 +1,51 @@
-export async function onRequestGet({ request, env }) {
-  try {
-    const { searchParams } = new URL(request.url);
+export async function onRequest(context) {
+  const { searchParams } = new URL(context.request.url);
+  const q = searchParams.get("q") || "pokemon";
+  const page = searchParams.get("page") || 1;
+  const type = searchParams.get("type") || "all";
+  const sort = searchParams.get("sort") || "best";
+  const sold = searchParams.get("sold") === "true";
 
-    const q = searchParams.get("q") || "pokemon";
-    const page = parseInt(searchParams.get("page") || "1", 10);
-    const perPage = 24;
+  const EBAY_APP_ID = context.env.EBAY_APP_ID;
 
-    const minPrice = searchParams.get("minPrice");
-    const maxPrice = searchParams.get("maxPrice");
-    const sold = searchParams.get("sold") === "true";
-    const sort = searchParams.get("sort") || "best";
-    const type = searchParams.get("type") || "all"; // all | auction | fixed
+  let filter = [];
+  if (sold) filter.push("SoldItemsOnly");
 
-    const ebayParams = new URLSearchParams({
-      q,
-      limit: perPage.toString(),
-      offset: ((page - 1) * perPage).toString(),
-    });
+  let sortMap = {
+    price_asc: "PricePlusShippingLowest",
+    price_desc: "PricePlusShippingHighest",
+    newest: "StartTimeNewest",
+    best: "BestMatch"
+  };
 
-    if (minPrice) ebayParams.append("priceFrom", minPrice);
-    if (maxPrice) ebayParams.append("priceTo", maxPrice);
+  const ebayURL =
+    `https://svcs.ebay.com/services/search/FindingService/v1` +
+    `?OPERATION-NAME=findItemsAdvanced` +
+    `&SERVICE-VERSION=1.0.0` +
+    `&SECURITY-APPNAME=${EBAY_APP_ID}` +
+    `&RESPONSE-DATA-FORMAT=JSON` +
+    `&REST-PAYLOAD` +
+    `&keywords=${encodeURIComponent(q)}` +
+    `&paginationInput.pageNumber=${page}` +
+    `&sortOrder=${sortMap[sort] || "BestMatch"}` +
+    filter.map((f, i) => `&itemFilter(${i}).name=${f}&itemFilter(${i}).value=true`).join("");
 
-    if (type === "auction") ebayParams.append("buyingOptions", "AUCTION");
-    if (type === "fixed") ebayParams.append("buyingOptions", "FIXED_PRICE");
+  const res = await fetch(ebayURL);
+  const json = await res.json();
 
-    if (sold) ebayParams.append("soldItemsOnly", "true");
+  const items =
+    json.findItemsAdvancedResponse?.[0]?.searchResult?.[0]?.item?.map(i => ({
+      title: i.title[0],
+      price: i.sellingStatus?.[0]?.currentPrice?.[0]?.__value__,
+      image: i.galleryURL?.[0],
+      url: i.viewItemURL?.[0]
+    })) || [];
 
-    if (sort === "price_asc") ebayParams.append("sort", "price");
-    if (sort === "price_desc") ebayParams.append("sort", "-price");
-    if (sort === "newest") ebayParams.append("sort", "newlyListed");
-
-    const ebayRes = await fetch(
-      `https://api.ebay.com/buy/browse/v1/item_summary/search?${ebayParams.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${env.EBAY_ACCESS_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (!ebayRes.ok) {
-      return json({ items: [], error: "eBay API error" }, 200);
-    }
-
-    const data = await ebayRes.json();
-
-    const items = (data.itemSummaries || []).map((item) => ({
-      id: item.itemId,
-      title: item.title,
-      price: item.price?.value ? Number(item.price.value) : null,
-      currency: item.price?.currency || "USD",
-      image: item.image?.imageUrl || "",
-      url: item.itemWebUrl,
-    }));
-
-    return json({
+  return new Response(
+    JSON.stringify({
       items,
-      page,
-      hasMore: items.length === perPage,
-    });
-  } catch (err) {
-    return json(
-      {
-        items: [],
-        error: "Server error",
-        message: err.message,
-      },
-      200
-    );
-  }
-}
-
-function json(data, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
+      hasMore: items.length > 0
+    }),
+    { headers: { "Content-Type": "application/json" } }
+  );
 }
