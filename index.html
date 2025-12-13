@@ -3,81 +3,78 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gempire Discovery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
 
-  <header>
-    <h1>Gempire Discovery</h1>
-    <p>Search Pokémon cards across eBay</p>
+<header class="header">
+  <h1>Gempire Discovery</h1>
+  <p>Search Pokémon cards across eBay</p>
+</header>
 
-    <div class="search-bar">
-      <input id="searchInput" placeholder="charizard psa 10" />
-      <button id="searchBtn">Search</button>
-    </div>
+<div class="container">
 
-    <!-- FILTERS -->
-    <div class="filters">
+  <!-- FILTERS -->
+  <aside class="filters">
+    <label>
+      Search
+      <input id="query" placeholder="charizard psa 10" />
+    </label>
 
-      <div class="filter-group">
-        <label>Grading</label>
-        <select id="gradingFilter">
-          <option value="">All</option>
-          <option value="PSA">PSA</option>
-          <option value="BGS">BGS</option>
-          <option value="CGC">CGC</option>
-          <option value="UNGRADED">Ungraded</option>
-        </select>
+    <label>
+      Grading
+      <select id="grading">
+        <option value="">Any</option>
+        <option value="PSA">PSA</option>
+        <option value="BGS">BGS</option>
+        <option value="CGC">CGC</option>
+      </select>
+    </label>
+
+    <label>
+      Grade
+      <select id="grade">
+        <option value="">Any</option>
+        <option>10</option>
+        <option>9.5</option>
+        <option>9</option>
+        <option>8</option>
+      </select>
+    </label>
+
+    <label>
+      Price ($)
+      <div class="price-row">
+        <input id="minPrice" placeholder="Min" />
+        <input id="maxPrice" placeholder="Max" />
       </div>
+    </label>
 
-      <div class="filter-group">
-        <label>Grade</label>
-        <select id="gradeNumberFilter">
-          <option value="">All</option>
-          <option value="10">10</option>
-          <option value="9">9</option>
-          <option value="8">8</option>
-        </select>
-      </div>
+    <label class="checkbox">
+      <input type="checkbox" id="usOnly" />
+      US only
+    </label>
 
-      <div class="filter-group">
-        <label>Price ($)</label>
-        <input id="minPrice" type="number" placeholder="Min" />
-        <input id="maxPrice" type="number" placeholder="Max" />
-      </div>
+    <button id="searchBtn">Search</button>
+  </aside>
 
-      <div class="filter-group">
-        <label>Listing Type</label>
-        <select id="listingType">
-          <option value="">All</option>
-          <option value="FIXED_PRICE">Buy It Now</option>
-          <option value="AUCTION">Auction</option>
-        </select>
-      </div>
-
-      <div class="filter-group">
-        <label>
-          <input type="checkbox" id="usOnly" />
-          US Only
-        </label>
-      </div>
-
-      <div class="filter-group">
-        <label>Sort</label>
-        <select id="sortBy">
-          <option value="">Default</option>
-          <option value="priceAsc">Price ↑</option>
-          <option value="priceDesc">Price ↓</option>
-        </select>
-      </div>
-
-    </div>
-  </header>
-
+  <!-- RESULTS -->
   <main>
-    <div id="results"></div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" data-type="all">All Items</button>
+      <button class="tab" data-type="auction">Auctions</button>
+      <button class="tab" data-type="fixed">Fixed Price</button>
+    </div>
+
+    <div id="results" class="grid"></div>
+
   </main>
 
-  <script src="app.js"></script>
+</div>
+
+<script src="app.js"></script>
 </body>
 </html>
