@@ -1,7 +1,3 @@
-<!-- =========================
-     FILE: index.html
-     REPLACE ENTIRE FILE
-========================= -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -11,7 +7,8 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-<header>
+
+<header class="header">
   <h1>Gempire Discovery</h1>
   <p>Search Pokémon cards across eBay</p>
 
@@ -21,15 +18,31 @@
   </div>
 
   <div class="tabs">
-    <button class="tab active" data-type="">All Items</button>
+    <button class="tab active" data-type="all">All Items</button>
     <button class="tab" data-type="auction">Auctions</button>
     <button class="tab" data-type="fixed">Fixed Price</button>
   </div>
 </header>
 
-<div class="layout">
+<main class="layout">
   <aside class="filters">
     <h3>Filters</h3>
+
+    <label>Grading</label>
+    <select id="grading">
+      <option value="">Any</option>
+      <option value="PSA">PSA</option>
+      <option value="BGS">BGS</option>
+      <option value="CGC">CGC</option>
+    </select>
+
+    <label>Grade</label>
+    <select id="grade">
+      <option value="">Any</option>
+      <option value="10">10</option>
+      <option value="9">9</option>
+      <option value="8">8</option>
+    </select>
 
     <label>Min Price</label>
     <input id="minPrice" type="number" />
@@ -37,26 +50,27 @@
     <label>Max Price</label>
     <input id="maxPrice" type="number" />
 
-    <label>
-      <input id="soldToggle" type="checkbox" />
+    <label class="checkbox">
+      <input type="checkbox" id="soldToggle" />
       Sold listings
     </label>
   </aside>
 
-  <section class="content">
-    <div class="sort-bar">
-      <select id="sortSelect">
-        <option value="">Default</option>
-        <option value="priceAsc">Price ↑</option>
-        <option value="priceDesc">Price ↓</option>
-        <option value="endSoonest">Ending Soon</option>
+  <section class="results-area">
+    <div class="results-header">
+      <select id="sort">
+        <option value="best">Best Match</option>
+        <option value="price_asc">Price ↑</option>
+        <option value="price_desc">Price ↓</option>
+        <option value="newest">Newest</option>
       </select>
     </div>
 
-    <div id="grid" class="grid"></div>
-    <div id="loader">Loading…</div>
+    <div id="results" class="grid"></div>
+
+    <div id="loading" class="loading">Loading…</div>
   </section>
-</div>
+</main>
 
 <script src="app.js"></script>
 </body>
