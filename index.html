@@ -3,78 +3,249 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gempire Discovery</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, sans-serif;
+      background: #0e0f12;
+      color: #fff;
+    }
+
+    header {
+      padding: 20px 32px;
+      border-bottom: 1px solid #1f2025;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    header p {
+      margin-top: 4px;
+      font-size: 13px;
+      color: #9ca3af;
+    }
+
+    .search-bar {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .search-bar input {
+      flex: 1;
+      padding: 12px 14px;
+      background: #14151a;
+      border: 1px solid #24262d;
+      color: white;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .search-bar button {
+      padding: 12px 18px;
+      background: #6366f1;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 20px;
+      padding: 16px 32px;
+      border-bottom: 1px solid #1f2025;
+    }
+
+    .tab {
+      font-size: 14px;
+      font-weight: 600;
+      color: #9ca3af;
+      cursor: pointer;
+      padding-bottom: 10px;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active {
+      color: #fff;
+      border-color: #6366f1;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 24px;
+      padding: 24px 32px;
+    }
+
+    aside {
+      background: #121318;
+      border: 1px solid #1f2025;
+      border-radius: 12px;
+      padding: 16px;
+      height: fit-content;
+    }
+
+    aside h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    aside label {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+      color: #9ca3af;
+    }
+
+    aside select,
+    aside input {
+      width: 100%;
+      padding: 8px 10px;
+      background: #14151a;
+      border: 1px solid #24262d;
+      border-radius: 6px;
+      color: white;
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #121318;
+      border: 1px solid #1f2025;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    }
+
+    .card img {
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      background: #000;
+    }
+
+    .card-body {
+      padding: 12px;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.4;
+      margin-bottom: 6px;
+    }
+
+    .price {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .card a {
+      font-size: 13px;
+      color: #6366f1;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .empty {
+      grid-column: 1 / -1;
+      text-align: center;
+      color: #9ca3af;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      aside {
+        order: 2;
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <header>
+    <h1>Gempire Discovery</h1>
+    <p>Search Pokémon cards across eBay</p>
 
-<header class="header">
-  <h1>Gempire Discovery</h1>
-  <p>Search Pokémon cards across eBay</p>
-</header>
+    <div class="search-bar">
+      <input id="query" placeholder="Search (e.g. charizard psa 10)" />
+      <button onclick="runSearch()">Search</button>
+    </div>
+  </header>
 
-<div class="container">
+  <div class="tabs">
+    <div class="tab active" data-type="all">All Items</div>
+    <div class="tab" data-type="auction">Auctions</div>
+    <div class="tab" data-type="fixed">Fixed Price</div>
+  </div>
 
-  <!-- FILTERS -->
-  <aside class="filters">
-    <label>
-      Search
-      <input id="query" placeholder="charizard psa 10" />
-    </label>
+  <div class="layout">
+    <aside>
+      <h3>Filters</h3>
 
-    <label>
-      Grading
+      <label>Grading</label>
       <select id="grading">
         <option value="">Any</option>
         <option value="PSA">PSA</option>
         <option value="BGS">BGS</option>
         <option value="CGC">CGC</option>
       </select>
-    </label>
 
-    <label>
-      Grade
+      <label>Grade</label>
       <select id="grade">
         <option value="">Any</option>
         <option>10</option>
-        <option>9.5</option>
         <option>9</option>
         <option>8</option>
       </select>
-    </label>
 
-    <label>
-      Price ($)
-      <div class="price-row">
-        <input id="minPrice" placeholder="Min" />
-        <input id="maxPrice" placeholder="Max" />
-      </div>
-    </label>
+      <label>Min Price</label>
+      <input id="minPrice" type="number" placeholder="0" />
 
-    <label class="checkbox">
-      <input type="checkbox" id="usOnly" />
-      US only
-    </label>
+      <label>Max Price</label>
+      <input id="maxPrice" type="number" placeholder="10000" />
 
-    <button id="searchBtn">Search</button>
-  </aside>
+      <label>
+        <input id="usOnly" type="checkbox" />
+        US only
+      </label>
+    </aside>
 
-  <!-- RESULTS -->
-  <main>
+    <main id="results"></main>
+  </div>
 
-    <!-- TABS -->
-    <div class="tabs">
-      <button class="tab active" data-type="all">All Items</button>
-      <button class="tab" data-type="auction">Auctions</button>
-      <button class="tab" data-type="fixed">Fixed Price</button>
-    </div>
-
-    <div id="results" class="grid"></div>
-
-  </main>
-
-</div>
-
-<script src="app.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
