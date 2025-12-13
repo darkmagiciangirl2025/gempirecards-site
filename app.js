@@ -11,21 +11,28 @@ const grade = document.getElementById('grade');
 const minPrice = document.getElementById('minPrice');
 const maxPrice = document.getElementById('maxPrice');
 
-let currentOffset = 0;
-let isLoading = false;
+let offset = 0;
 let hasMore = true;
+let isFetching = false;
 let currentType = 'all';
 
 const LIMIT = 24;
 const seenIds = new Set();
 
-async function loadResults(reset = false) {
-  if (isLoading || !hasMore) return;
-  isLoading = true;
+/* ---------- SENTINEL ---------- */
+const sentinel = document.createElement('div');
+sentinel.style.height = '1px';
+resultsEl.after(sentinel);
+
+/* ---------- FETCH ---------- */
+async function fetchResults(reset = false) {
+  if (isFetching || !hasMore) return;
+
+  isFetching = true;
   loadingEl.style.display = 'block';
 
   if (reset) {
-    currentOffset = 0;
+    offset = 0;
     hasMore = true;
     seenIds.clear();
     resultsEl.innerHTML = '';
@@ -34,7 +41,7 @@ async function loadResults(reset = false) {
   const params = new URLSearchParams({
     q: searchInput.value || 'pokemon',
     limit: LIMIT,
-    offset: currentOffset,
+    offset,
     sort: sortSelect.value,
     sold: soldToggle.checked,
     grading: grading.value,
@@ -44,29 +51,40 @@ async function loadResults(reset = false) {
     type: currentType
   });
 
-  const res = await fetch(`/api/search?${params.toString()}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`/api/search?${params.toString()}`);
+    const data = await res.json();
+    const items = data.itemSummaries || [];
 
-  const items = data.itemSummaries || [];
-  if (items.length === 0) {
-    hasMore = false;
+    if (items.length === 0) {
+      hasMore = false;
+      return;
+    }
+
+    let appended = 0;
+
+    for (const item of items) {
+      if (seenIds.has(item.itemId)) continue;
+      seenIds.add(item.itemId);
+      resultsEl.appendChild(renderCard(item));
+      appended++;
+    }
+
+    offset += items.length;
+
+    if (items.length < LIMIT || appended === 0) {
+      hasMore = false;
+    }
+
+  } catch (err) {
+    console.error('Fetch error:', err);
+  } finally {
+    isFetching = false;
     loadingEl.style.display = 'none';
-    return;
   }
-
-  for (const item of items) {
-    if (seenIds.has(item.itemId)) continue;
-    seenIds.add(item.itemId);
-    resultsEl.appendChild(renderCard(item));
-  }
-
-  currentOffset += items.length;
-  if (items.length < LIMIT) hasMore = false;
-
-  isLoading = false;
-  loadingEl.style.display = 'none';
 }
 
+/* ---------- CARD ---------- */
 function renderCard(item) {
   const card = document.createElement('div');
   card.className = 'card';
@@ -84,31 +102,40 @@ function renderCard(item) {
   return card;
 }
 
-/* EVENTS */
+/* ---------- INTERSECTION OBSERVER ---------- */
+const observer = new IntersectionObserver(
+  entries => {
+    if (entries[0].isIntersecting) {
+      fetchResults();
+    }
+  },
+  { rootMargin: '800px' }
+);
 
-searchBtn.onclick = () => loadResults(true);
-sortSelect.onchange = () => loadResults(true);
-soldToggle.onchange = () => loadResults(true);
-grading.onchange = () => loadResults(true);
-grade.onchange = () => loadResults(true);
-minPrice.onchange = () => loadResults(true);
-maxPrice.onchange = () => loadResults(true);
+observer.observe(sentinel);
+
+/* ---------- EVENTS ---------- */
+function resetAndSearch() {
+  hasMore = true;
+  fetchResults(true);
+}
+
+searchBtn.onclick = resetAndSearch;
+sortSelect.onchange = resetAndSearch;
+soldToggle.onchange = resetAndSearch;
+grading.onchange = resetAndSearch;
+grade.onchange = resetAndSearch;
+minPrice.onchange = resetAndSearch;
+maxPrice.onchange = resetAndSearch;
 
 document.querySelectorAll('.tab').forEach(tab => {
   tab.onclick = () => {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     currentType = tab.dataset.type;
-    loadResults(true);
+    resetAndSearch();
   };
 });
 
-/* INFINITE SCROLL */
-window.addEventListener('scroll', () => {
-  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 800) {
-    loadResults();
-  }
-});
-
-/* INITIAL LOAD */
-loadResults(true);
+/* ---------- INITIAL LOAD ---------- */
+fetchResults(true);
