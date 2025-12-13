@@ -1,59 +1,75 @@
-async function runSearch() {
-  const query = document.getElementById("searchInput").value.trim();
-  const sort = document.getElementById("sortSelect").value;
+// app.js
+// Gempire Discovery frontend logic
+// Talks to /api/search and /api/go/:itemId
+
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById("searchInput");
+  const searchBtn = document.getElementById("searchBtn");
   const resultsEl = document.getElementById("results");
+  const statusEl = document.getElementById("status");
 
-  if (!query) {
+  async function runSearch() {
+    const query = searchInput.value.trim();
+    if (!query) return;
+
+    statusEl.textContent = "Searching eBay…";
     resultsEl.innerHTML = "";
-    return;
-  }
 
-  resultsEl.innerHTML = "<p>Loading results...</p>";
+    try {
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
 
-  try {
-    // IMPORTANT: relative path → Cloudflare routes to Worker
-    let apiUrl = `/search?q=${encodeURIComponent(query)}`;
+      if (!res.ok) {
+        throw new Error(`API error (${res.status})`);
+      }
 
-    if (sort) {
-      apiUrl += `&sort=${sort}`;
-    }
+      const data = await res.json();
 
-    const response = await fetch(apiUrl);
+      if (!data.items || data.items.length === 0) {
+        statusEl.textContent = "No results found.";
+        return;
+      }
 
-    if (!response.ok) {
-      throw new Error(`API error ${response.status}`);
-    }
+      statusEl.textContent = `Showing ${data.items.length} results`;
 
-    const data = await response.json();
+      data.items.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "result-card";
 
-    if (!data.items || data.items.length === 0) {
-      resultsEl.innerHTML = "<p>No results found.</p>";
-      return;
-    }
-
-    resultsEl.innerHTML = data.items
-      .map(item => `
-        <div class="card">
+        card.innerHTML = `
           <img src="${item.image}" alt="${item.title}" />
-          <h3>${item.title}</h3>
-          <p class="price">$${item.price}</p>
-          <p class="seller">Seller: ${item.seller}</p>
-          <a href="${item.link}" target="_blank" rel="noopener">
-            View on eBay
-          </a>
-        </div>
-      `)
-      .join("");
+          <div class="result-info">
+            <h3>${item.title}</h3>
+            <p class="price">$${item.price}</p>
+            <p class="meta">
+              ${item.condition || "Unknown condition"} · ${item.seller}
+            </p>
+            <a
+              href="${item.link}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="buy-btn"
+            >
+              View on eBay →
+            </a>
+          </div>
+        `;
 
-  } catch (err) {
-    console.error("Search failed:", err);
-    resultsEl.innerHTML = "<p>Error loading results</p>";
-  }
-}
+        resultsEl.appendChild(card);
+      });
 
-// Allow Enter key search
-document.getElementById("searchInput").addEventListener("keydown", e => {
-  if (e.key === "Enter") {
-    runSearch();
+    } catch (err) {
+      console.error(err);
+      statusEl.textContent = "Something went wrong. Check console.";
+    }
   }
+
+  // Click search
+  searchBtn.addEventListener("click", runSearch);
+
+  // Enter key search
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      runSearch();
+    }
+  });
 });
