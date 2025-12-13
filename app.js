@@ -1,111 +1,114 @@
-let page = 0;
-let loading = false;
-let listingType = "all";
+const resultsEl = document.getElementById('results');
+const loadingEl = document.getElementById('loading');
 
-let watchlist = JSON.parse(localStorage.getItem("watchlist") || "[]");
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const sortSelect = document.getElementById('sort');
+const soldToggle = document.getElementById('soldToggle');
 
-document.querySelectorAll(".tab").forEach(tab => {
-  tab.onclick = () => {
-    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    listingType = tab.dataset.type;
-    newSearch();
-  };
-});
+const grading = document.getElementById('grading');
+const grade = document.getElementById('grade');
+const minPrice = document.getElementById('minPrice');
+const maxPrice = document.getElementById('maxPrice');
 
-function newSearch() {
-  page = 0;
-  document.getElementById("results").innerHTML = "";
-  runSearch();
-}
+let currentOffset = 0;
+let isLoading = false;
+let hasMore = true;
+let currentType = 'all';
 
-function mapSort(uiSort) {
-  switch (uiSort) {
-    case "price_asc":
-      return "price";
-    case "price_desc":
-      return "-price";
-    case "newest":
-      return "newlyListed";
-    default:
-      return "relevance";
+const LIMIT = 24;
+const seenIds = new Set();
+
+async function loadResults(reset = false) {
+  if (isLoading || !hasMore) return;
+  isLoading = true;
+  loadingEl.style.display = 'block';
+
+  if (reset) {
+    currentOffset = 0;
+    hasMore = true;
+    seenIds.clear();
+    resultsEl.innerHTML = '';
   }
-}
-
-async function runSearch() {
-  if (loading) return;
-  loading = true;
-
-  const q = document.getElementById("query").value.trim();
-  let query = q;
-
-  const grading = document.getElementById("grading").value;
-  const grade = document.getElementById("grade").value;
-  const min = document.getElementById("minPrice").value;
-  const max = document.getElementById("maxPrice").value;
-  const sold = document.getElementById("soldToggle").checked;
-
-  const uiSort = document.getElementById("sort").value;
-  const sort = mapSort(uiSort);
-
-  if (grading) query += ` ${grading}`;
-  if (grade) query += ` ${grade}`;
 
   const params = new URLSearchParams({
-    q: query,
-    offset: page * 24,
-    limit: 24,
-    sort
+    q: searchInput.value || 'pokemon',
+    limit: LIMIT,
+    offset: currentOffset,
+    sort: sortSelect.value,
+    sold: soldToggle.checked,
+    grading: grading.value,
+    grade: grade.value,
+    minPrice: minPrice.value,
+    maxPrice: maxPrice.value,
+    type: currentType
   });
-
-  if (listingType === "auction") params.append("auction", "true");
-  if (listingType === "fixed") params.append("fixed", "true");
-  if (min) params.append("min", min);
-  if (max) params.append("max", max);
-  if (sold) params.append("sold", "true");
 
   const res = await fetch(`/api/search?${params.toString()}`);
   const data = await res.json();
 
-  const results = document.getElementById("results");
+  const items = data.itemSummaries || [];
+  if (items.length === 0) {
+    hasMore = false;
+    loadingEl.style.display = 'none';
+    return;
+  }
 
-  data.itemSummaries?.forEach(item => {
-    const card = document.createElement("div");
-    card.className = "card";
+  for (const item of items) {
+    if (seenIds.has(item.itemId)) continue;
+    seenIds.add(item.itemId);
+    resultsEl.appendChild(renderCard(item));
+  }
 
-    const liked = watchlist.includes(item.itemId);
+  currentOffset += items.length;
+  if (items.length < LIMIT) hasMore = false;
 
-    card.innerHTML = `
-      <div class="heart ${liked ? "active" : ""}" data-id="${item.itemId}">♥</div>
-      <img src="${item.image?.imageUrl || ""}">
-      <div class="card-body">
-        <div class="card-title">${item.title}</div>
-        <div class="price">$${item.price?.value || "-"}</div>
-        <a href="${item.itemWebUrl}" target="_blank">View on eBay</a>
-      </div>
-    `;
-
-    card.querySelector(".heart").onclick = (e) => {
-      const id = e.target.dataset.id;
-      if (watchlist.includes(id)) {
-        watchlist = watchlist.filter(x => x !== id);
-        e.target.classList.remove("active");
-      } else {
-        watchlist.push(id);
-        e.target.classList.add("active");
-      }
-      localStorage.setItem("watchlist", JSON.stringify(watchlist));
-    };
-
-    results.appendChild(card);
-  });
-
-  page++;
-  loading = false;
+  isLoading = false;
+  loadingEl.style.display = 'none';
 }
 
-window.addEventListener("scroll", () => {
-  if (window.innerHeight + window.scrollY > document.body.offsetHeight - 600) {
-    runSearch();
+function renderCard(item) {
+  const card = document.createElement('div');
+  card.className = 'card';
+
+  const img = item.image?.imageUrl || '';
+  const price = item.price?.value ? `$${item.price.value}` : '';
+
+  card.innerHTML = `
+    <img src="${img}" />
+    <h4>${item.title}</h4>
+    <div class="price">${price}</div>
+    <a href="${item.itemWebUrl}" target="_blank">View on eBay</a>
+  `;
+
+  return card;
+}
+
+/* EVENTS */
+
+searchBtn.onclick = () => loadResults(true);
+sortSelect.onchange = () => loadResults(true);
+soldToggle.onchange = () => loadResults(true);
+grading.onchange = () => loadResults(true);
+grade.onchange = () => loadResults(true);
+minPrice.onchange = () => loadResults(true);
+maxPrice.onchange = () => loadResults(true);
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentType = tab.dataset.type;
+    loadResults(true);
+  };
+});
+
+/* INFINITE SCROLL */
+window.addEventListener('scroll', () => {
+  if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 800) {
+    loadResults();
   }
 });
+
+/* INITIAL LOAD */
+loadResults(true);
