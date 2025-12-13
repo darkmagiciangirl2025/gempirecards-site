@@ -1,51 +1,61 @@
 export async function onRequest(context) {
-  const { searchParams } = new URL(context.request.url);
-  const q = searchParams.get("q") || "pokemon";
-  const page = searchParams.get("page") || 1;
-  const type = searchParams.get("type") || "all";
-  const sort = searchParams.get("sort") || "best";
-  const sold = searchParams.get("sold") === "true";
+  const { request, params } = context;
+  const url = new URL(request.url);
+  const endpoint = params.path;
 
-  const EBAY_APP_ID = context.env.EBAY_APP_ID;
+  // Only handle /api/search
+  if (endpoint !== "search") {
+    return new Response(JSON.stringify({ error: "Not found" }), {
+      status: 404,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 
-  let filter = [];
-  if (sold) filter.push("SoldItemsOnly");
+  const q = url.searchParams.get("q") || "pokemon";
+  const minPrice = url.searchParams.get("minPrice");
+  const maxPrice = url.searchParams.get("maxPrice");
+  const sold = url.searchParams.get("sold") === "true";
+  const sort = url.searchParams.get("sort") || "BestMatch";
 
-  let sortMap = {
-    price_asc: "PricePlusShippingLowest",
-    price_desc: "PricePlusShippingHighest",
-    newest: "StartTimeNewest",
-    best: "BestMatch"
-  };
+  const ebayParams = new URLSearchParams({
+    _nkw: q,
+    _sop: sort === "PricePlusShippingLowest" ? "15" : "12",
+    LH_Sold: sold ? "1" : "0",
+    LH_Complete: sold ? "1" : "0",
+    _ipg: "60",
+  });
 
-  const ebayURL =
-    `https://svcs.ebay.com/services/search/FindingService/v1` +
-    `?OPERATION-NAME=findItemsAdvanced` +
-    `&SERVICE-VERSION=1.0.0` +
-    `&SECURITY-APPNAME=${EBAY_APP_ID}` +
-    `&RESPONSE-DATA-FORMAT=JSON` +
-    `&REST-PAYLOAD` +
-    `&keywords=${encodeURIComponent(q)}` +
-    `&paginationInput.pageNumber=${page}` +
-    `&sortOrder=${sortMap[sort] || "BestMatch"}` +
-    filter.map((f, i) => `&itemFilter(${i}).name=${f}&itemFilter(${i}).value=true`).join("");
+  if (minPrice) ebayParams.set("_udlo", minPrice);
+  if (maxPrice) ebayParams.set("_udhi", maxPrice);
 
-  const res = await fetch(ebayURL);
-  const json = await res.json();
+  const ebayURL = `https://www.ebay.com/sch/i.html?${ebayParams.toString()}`;
 
-  const items =
-    json.findItemsAdvancedResponse?.[0]?.searchResult?.[0]?.item?.map(i => ({
-      title: i.title[0],
-      price: i.sellingStatus?.[0]?.currentPrice?.[0]?.__value__,
-      image: i.galleryURL?.[0],
-      url: i.viewItemURL?.[0]
-    })) || [];
+  const res = await fetch(ebayURL, {
+    headers: {
+      "User-Agent": "Mozilla/5.0",
+    },
+  });
 
-  return new Response(
-    JSON.stringify({
-      items,
-      hasMore: items.length > 0
-    }),
-    { headers: { "Content-Type": "application/json" } }
-  );
+  const html = await res.text();
+
+  // VERY BASIC scrape (safe fallback)
+  const items = [...html.matchAll(/<li class="s-item.*?<\/li>/gs)].slice(0, 60);
+
+  const results = items.map((block) => {
+    const title = block[0].match(/class="s-item__title">([^<]+)/)?.[1];
+    const price = block[0].match(/\$[\d,]+(\.\d{2})?/i)?.[0];
+    const link = block[0].match(/href="(https:\/\/www\.ebay\.com\/itm\/[^"]+)"/)?.[1];
+    const img = block[0].match(/img src="([^"]+)"/)?.[1];
+
+    if (!title || !price || !link) return null;
+
+    return { title, price, link, img };
+  }).filter(Boolean);
+
+  return new Response(JSON.stringify({ results }), {
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
 }
