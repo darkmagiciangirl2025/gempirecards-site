@@ -13,12 +13,12 @@ async function search() {
     const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
 
     if (!res.ok) {
-      throw new Error(`API error: ${res.status}`);
+      throw new Error(`API error ${res.status}`);
     }
 
     const data = await res.json();
+    console.log("API DATA:", data); // keep for verification
 
-    // Support both backend shapes
     const items = data.results || data.items || [];
 
     if (!items.length) {
@@ -33,13 +33,14 @@ async function search() {
       const image =
         item.img ||
         item.image ||
-        item.image?.imageUrl ||
         "https://via.placeholder.com/300x300?text=No+Image";
 
       const price =
-        typeof item.price === "object"
+        typeof item.price === "string"
+          ? item.price
+          : item.price?.value
           ? `$${item.price.value}`
-          : item.price || "—";
+          : "—";
 
       const link = item.link || item.url || "#";
 
@@ -47,7 +48,9 @@ async function search() {
         <img src="${image}" />
         <h4>${item.title}</h4>
         <p class="price">${price}</p>
-        <a href="${link}" target="_blank" rel="noopener">View on eBay</a>
+        <a href="${link}" target="_blank" rel="noopener">
+          View on eBay
+        </a>
       `;
 
       resultsEl.appendChild(card);
