@@ -1,20 +1,48 @@
 // ==========================
 // Helpers
 // ==========================
-function stripNumber(val = "") {
+
+// For MIN/MAX inputs: digits only (no commas, no $)
+function stripDigits(val = "") {
   return val.replace(/[^\d]/g, "");
 }
 
 function formatNumber(val) {
-  const num = Number(stripNumber(val));
+  const num = Number(stripDigits(val));
   if (!num) return "";
   return num.toLocaleString("en-US");
 }
 
+// For LISTING prices: allow decimals + commas
+function parsePrice(val) {
+  if (val === null || val === undefined) return null;
+  if (typeof val === "number") return Number.isFinite(val) ? val : null;
+
+  const s = String(val).trim();
+
+  // Keep digits, comma, dot. Remove $ and other text.
+  const cleaned = s.replace(/[^0-9.,]/g, "");
+  if (!cleaned) return null;
+
+  // Remove thousands separators
+  const normalized = cleaned.replace(/,/g, "");
+
+  const num = parseFloat(normalized);
+  return Number.isFinite(num) ? num : null;
+}
+
 function formatUSD(val) {
-  const num = Number(stripNumber(val));
-  if (!num) return "—";
-  return `$${num.toLocaleString("en-US")}`;
+  const num = parsePrice(val);
+  if (num === null) return "—";
+
+  const hasCents = Math.round(num * 100) % 100 !== 0;
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: hasCents ? 2 : 0,
+    maximumFractionDigits: hasCents ? 2 : 0,
+  }).format(num);
 }
 
 // ==========================
@@ -35,20 +63,20 @@ const tabFixed = document.getElementById("tabFixed");
 let listingType = "all";
 
 // ==========================
-// Price Input Formatting
+// Price Input Formatting (Min/Max)
 // ==========================
 function attachPriceFormatter(input) {
   input.addEventListener("input", (e) => {
-    e.target.value = stripNumber(e.target.value);
+    e.target.value = stripDigits(e.target.value);
   });
 
   input.addEventListener("blur", (e) => {
-    const raw = stripNumber(e.target.value);
+    const raw = stripDigits(e.target.value);
     e.target.value = raw ? formatNumber(raw) : "";
   });
 
   input.addEventListener("focus", (e) => {
-    e.target.value = stripNumber(e.target.value);
+    e.target.value = stripDigits(e.target.value);
   });
 }
 
@@ -83,8 +111,8 @@ async function runSearch() {
   const q = searchInput.value.trim();
   if (!q) return;
 
-  const min = Number(stripNumber(minPrice.value));
-  const max = Number(stripNumber(maxPrice.value));
+  const min = Number(stripDigits(minPrice.value));
+  const max = Number(stripDigits(maxPrice.value));
 
   if (min && max && min > max) {
     alert("Min price cannot be greater than Max price");
@@ -125,7 +153,7 @@ searchInput.addEventListener("keydown", (e) => {
 function render(items) {
   results.innerHTML = "";
 
-  items.forEach(item => {
+  items.forEach((item) => {
     const card = document.createElement("div");
     card.className = "card";
 
@@ -144,7 +172,6 @@ function render(items) {
 // AUTO SEARCH ON LOAD ✅
 // ==========================
 window.addEventListener("load", () => {
-  // Default experience
   searchInput.value = "pokemon psa";
 
   // Min price = 3000, formatted as 3,000
