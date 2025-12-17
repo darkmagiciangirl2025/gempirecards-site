@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>Gempire Discovery</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -12,8 +13,13 @@
     <p>Search Pokémon cards across eBay</p>
 
     <div class="search-row">
-      <input id="searchInput" placeholder="pokemon psa" />
-      <button id="searchBtn">Search</button>
+      <input
+        id="searchInput"
+        type="text"
+        placeholder="pokemon psa"
+        autocomplete="off"
+      />
+      <button id="searchBtn" type="button">Search</button>
     </div>
 
     <div class="tabs">
@@ -27,18 +33,18 @@
     <aside class="filters">
       <h3>Filters</h3>
 
-      <label>Min Price</label>
-      <input id="minPrice" type="number" />
+      <label for="minPrice">Min Price</label>
+      <input id="minPrice" type="number" placeholder="0" />
 
-      <label>Max Price</label>
-      <input id="maxPrice" type="number" />
+      <label for="maxPrice">Max Price</label>
+      <input id="maxPrice" type="number" placeholder="1000" />
 
-      <label>
+      <label class="checkbox">
         <input type="checkbox" id="soldToggle" />
         Sold listings
       </label>
 
-      <label>Sort</label>
+      <label for="sortSelect">Sort</label>
       <select id="sortSelect">
         <option value="best">Best Match</option>
         <option value="price_asc">Price ↑</option>
@@ -49,7 +55,7 @@
 
     <section class="results">
       <div id="grid" class="grid"></div>
-      <div id="loader" class="loader">Loading…</div>
+      <div id="loader" class="loading">Loading…</div>
     </section>
   </main>
 
