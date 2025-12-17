@@ -1,318 +1,292 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Gempire Discovery</title>
+  <meta charset="UTF-8" />
+  <title>Gempire Discovery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<style>
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background: radial-gradient(circle at top, #0b1535, #020617 70%);
-  color: white;
-}
+  <style>
+    :root {
+      --bg: #050b1d;
+      --card: #0b1430;
+      --accent: #5b6cff;
+      --text: #ffffff;
+      --muted: #9aa4d6;
+    }
 
-header {
-  padding: 28px 40px;
-}
+    * {
+      box-sizing: border-box;
+    }
 
-h1 {
-  margin: 0;
-  font-size: 28px;
-}
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(1200px 600px at top, #0b153a, var(--bg));
+      color: var(--text);
+    }
 
-.subtitle {
-  color: #a5b4fc;
-  margin-top: 4px;
-}
+    header {
+      padding: 36px 48px 20px;
+    }
 
-.search-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
+    h1 {
+      margin: 0;
+      font-size: 34px;
+      font-weight: 700;
+    }
 
-.search-row input {
-  flex: 1;
-  padding: 14px;
-  font-size: 16px;
-  border-radius: 8px;
-  border: none;
-}
+    header p {
+      margin-top: 6px;
+      color: var(--muted);
+    }
 
-.search-row button {
-  padding: 14px 18px;
-  border-radius: 8px;
-  border: none;
-  background: #6366f1;
-  color: white;
-  font-weight: 600;
-  cursor: pointer;
-}
+    .search-row {
+      display: flex;
+      gap: 12px;
+      margin-top: 20px;
+    }
 
-.tabs {
-  display: flex;
-  gap: 18px;
-  margin-top: 20px;
-  font-weight: 600;
-}
+    .search-row input {
+      flex: 1;
+      padding: 16px 18px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+    }
 
-.tabs span {
-  cursor: pointer;
-  color: #c7d2fe;
-}
+    .search-row button {
+      padding: 16px 22px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 10px;
+      border: none;
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
 
-.tabs span.active {
-  color: white;
-  text-decoration: underline;
-}
+    .tabs {
+      display: flex;
+      gap: 22px;
+      margin-top: 18px;
+      font-weight: 600;
+    }
 
-.sort-row {
-  margin-top: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
+    .tabs span {
+      cursor: pointer;
+      color: var(--muted);
+    }
 
-.sort-row select {
-  background: #0f172a;
-  color: white;
-  border: 1px solid #1e293b;
-  padding: 6px 10px;
-  border-radius: 6px;
-}
+    .tabs span.active {
+      color: white;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 6px;
+    }
 
-.main {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 30px;
-  padding: 30px 40px;
-}
+    .sort-row {
+      margin-top: 20px;
+      padding-left: 48px;
+    }
 
-.filters {
-  background: rgba(255,255,255,0.04);
-  padding: 20px;
-  border-radius: 12px;
-}
+    .sort-row select {
+      background: var(--card);
+      color: white;
+      border: 1px solid #1e2a66;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+    }
 
-.filters h3 {
-  margin-top: 0;
-}
+    .layout {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 28px;
+      padding: 30px 48px 60px;
+      align-items: start;
+    }
 
-.price-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-}
+    .filters {
+      position: sticky;
+      top: 24px;
+      background: linear-gradient(180deg, #0b1430, #070d23);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.4);
+      align-self: flex-start;
+    }
 
-.price-input {
-  display: flex;
-  align-items: center;
-  background: #020617;
-  border-radius: 8px;
-  padding: 6px 10px;
-  border: 1px solid #1e293b;
-}
+    .filters h3 {
+      margin-top: 0;
+      margin-bottom: 14px;
+    }
 
-.price-input span {
-  color: #94a3b8;
-  margin-right: 4px;
-}
+    .price-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-.price-input input {
-  width: 90px;
-  background: none;
-  border: none;
-  color: white;
-  outline: none;
-}
+    .price-row input {
+      width: 100%;
+      padding: 10px 12px;
+      background: #050b1d;
+      border: 1px solid #1e2a66;
+      color: white;
+      border-radius: 8px;
+      font-size: 14px;
+    }
 
-.apply-btn {
-  margin-left: auto;
-  background: #6366f1;
-  border: none;
-  color: white;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  cursor: pointer;
-}
+    .apply-btn {
+      margin-top: 14px;
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      color: white;
+    }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 20px;
-}
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 22px;
+    }
 
-.card {
-  background: rgba(255,255,255,0.04);
-  padding: 14px;
-  border-radius: 14px;
-}
+    .card {
+      background: linear-gradient(180deg, #0b1430, #060c20);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.45);
+    }
 
-.card img {
-  width: 100%;
-  border-radius: 10px;
-}
+    .card img {
+      width: 100%;
+      height: 280px;
+      object-fit: contain;
+      border-radius: 12px;
+      background: #020617;
+    }
 
-.card h4 {
-  font-size: 14px;
-  margin: 10px 0 6px;
-}
+    .card h4 {
+      font-size: 14px;
+      margin: 12px 0 6px;
+      line-height: 1.4;
+    }
 
-.card .price {
-  font-weight: 700;
-}
+    .price {
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
 
-.card a {
-  color: #60a5fa;
-  text-decoration: none;
-  font-size: 14px;
-}
-</style>
+    .card a {
+      color: var(--accent);
+      font-size: 13px;
+      text-decoration: none;
+    }
+  </style>
 </head>
 
 <body>
 
 <header>
   <h1>Gempire Discovery</h1>
-  <div class="subtitle">Search Pokémon cards across eBay</div>
+  <p>Search Pokémon cards across eBay</p>
 
   <div class="search-row">
-    <input id="query" placeholder="Search Pokémon cards" />
-    <button onclick="runSearch()">Search</button>
+    <input id="query" placeholder="pokemon psa" />
+    <button onclick="search()">Search</button>
   </div>
 
   <div class="tabs">
-    <span class="active" data-type="all">All Items</span>
-    <span data-type="auction">Auctions</span>
-    <span data-type="fixed">Fixed Price</span>
-  </div>
-
-  <div class="sort-row">
-    <label>Sort by</label>
-    <select id="sortSelect">
-      <option value="best">Best Match</option>
-      <option value="priceDesc">Price: High → Low</option>
-      <option value="priceAsc">Price: Low → High</option>
-    </select>
+    <span class="active">All Items</span>
+    <span>Auctions</span>
+    <span>Fixed Price</span>
   </div>
 </header>
 
-<div class="main">
+<div class="sort-row">
+  Sort by
+  <select id="sort">
+    <option value="">Best Match</option>
+    <option value="newest">Newly Listed</option>
+    <option value="priceAsc">Price: Low → High</option>
+    <option value="priceDesc">Price: High → Low</option>
+  </select>
+</div>
+
+<div class="layout">
+
   <aside class="filters">
     <h3>Filters</h3>
 
     <div class="price-row">
-      <div class="price-input">
-        <span>$</span>
-        <input id="minPrice" placeholder="Min" />
-      </div>
+      <input id="minPrice" placeholder="$ Min" />
       <span>to</span>
-      <div class="price-input">
-        <span>$</span>
-        <input id="maxPrice" placeholder="Max" />
-      </div>
-      <button class="apply-btn" onclick="runSearch()">›</button>
+      <input id="maxPrice" placeholder="$ Max" />
     </div>
+
+    <button class="apply-btn" onclick="search()">Apply</button>
   </aside>
 
-  <section>
+  <main>
     <div id="results" class="grid"></div>
-  </section>
+  </main>
+
 </div>
 
 <script>
-const resultsEl = document.getElementById("results");
-const sortSelect = document.getElementById("sortSelect");
-let activeType = "all";
-let currentItems = [];
+  function formatMoney(n) {
+    return "$" + n.toLocaleString("en-US");
+  }
 
-document.querySelectorAll(".tabs span").forEach(tab => {
-  tab.onclick = () => {
-    document.querySelectorAll(".tabs span").forEach(t => t.classList.remove("active"));
-    tab.classList.add("active");
-    activeType = tab.dataset.type;
-    runSearch();
+  function parseMoney(val) {
+    if (!val) return "";
+    return val.replace(/[^0-9]/g, "");
+  }
+
+  async function search() {
+    const q = document.getElementById("query").value || "pokemon psa";
+    const min = parseMoney(document.getElementById("minPrice").value);
+    const max = parseMoney(document.getElementById("maxPrice").value);
+    const sort = document.getElementById("sort").value;
+
+    let url = `/api/search?q=${encodeURIComponent(q)}`;
+    if (min) url += `&min=${min}`;
+    if (max) url += `&max=${max}`;
+    if (sort) url += `&sort=${sort}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    const grid = document.getElementById("results");
+    grid.innerHTML = "";
+
+    data.items.forEach(item => {
+      const priceNum = Number(item.price);
+      if (!priceNum || isNaN(priceNum)) return;
+
+      const img = item.image.replace("s-l225", "s-l1600");
+
+      grid.innerHTML += `
+        <div class="card">
+          <img src="${img}" />
+          <h4>${item.title}</h4>
+          <div class="price">${formatMoney(priceNum)}</div>
+          <a href="${item.link}" target="_blank">View</a>
+        </div>
+      `;
+    });
+  }
+
+  // 🔥 AUTO LOAD
+  window.onload = () => {
+    document.getElementById("query").value = "pokemon psa";
+    document.getElementById("minPrice").value = "$3,000";
+    search();
   };
-});
-
-sortSelect.addEventListener("change", applySort);
-
-function parsePrice(p) {
-  if (!p) return 0;
-  return Number(p.replace(/[^0-9.]/g, ""));
-}
-
-function formatPrice(n) {
-  return "$" + n.toLocaleString();
-}
-
-function formatInput(el) {
-  const raw = el.value.replace(/[^0-9]/g, "");
-  if (!raw) return "";
-  el.value = Number(raw).toLocaleString();
-}
-
-["minPrice","maxPrice"].forEach(id => {
-  const el = document.getElementById(id);
-  el.addEventListener("input", () => formatInput(el));
-});
-
-async function runSearch() {
-  const q = document.getElementById("query").value.trim();
-  if (!q) return;
-
-  const min = parsePrice(document.getElementById("minPrice").value);
-  const max = parsePrice(document.getElementById("maxPrice").value);
-
-  let url = `/api/search?q=${encodeURIComponent(q)}`;
-  if (min) url += `&min=${min}`;
-  if (max) url += `&max=${max}`;
-  if (activeType !== "all") url += `&type=${activeType}`;
-
-  const res = await fetch(url);
-  const data = await res.json();
-  currentItems = data.items || [];
-  applySort();
-}
-
-function applySort() {
-  let items = [...currentItems];
-  const sort = sortSelect.value;
-
-  if (sort === "priceAsc") {
-    items.sort((a,b) => parsePrice(a.price) - parsePrice(b.price));
-  }
-  if (sort === "priceDesc") {
-    items.sort((a,b) => parsePrice(b.price) - parsePrice(a.price));
-  }
-
-  render(items);
-}
-
-function render(items) {
-  resultsEl.innerHTML = "";
-  items.forEach(item => {
-    const priceNum = parsePrice(item.price);
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <img src="${item.image}" />
-      <h4>${item.title}</h4>
-      <div class="price">${formatPrice(priceNum)}</div>
-      <a href="${item.link}" target="_blank">View</a>
-    `;
-    resultsEl.appendChild(card);
-  });
-}
-
-/* AUTO LOAD */
-window.onload = () => {
-  document.getElementById("query").value = "pokemon psa";
-  document.getElementById("minPrice").value = "3,000";
-  runSearch();
-};
 </script>
 
 </body>
