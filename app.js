@@ -1,13 +1,21 @@
 // ==========================
 // Helpers
 // ==========================
-const stripNumber = (val) => val.replace(/[^0-9]/g, "");
+function stripNumber(val = "") {
+  return val.replace(/[^\d]/g, "");
+}
 
-const formatUSD = (val) => {
-  const num = Number(stripNumber(val.toString()));
+function formatNumber(val) {
+  const num = Number(stripNumber(val));
+  if (!num) return "";
+  return num.toLocaleString("en-US");
+}
+
+function formatUSD(val) {
+  const num = Number(stripNumber(val));
   if (!num) return "—";
   return `$${num.toLocaleString("en-US")}`;
-};
+}
 
 // ==========================
 // DOM
@@ -27,23 +35,33 @@ const tabFixed = document.getElementById("tabFixed");
 let listingType = "all";
 
 // ==========================
-// Input Formatting
+// Price Input Formatting
 // ==========================
-function attachFormatter(input) {
+function attachPriceFormatter(input) {
   input.addEventListener("input", (e) => {
     const raw = stripNumber(e.target.value);
-    e.target.value = raw ? raw.toLocaleString("en-US") : "";
+    e.target.value = raw ? raw : "";
+  });
+
+  input.addEventListener("blur", (e) => {
+    const raw = stripNumber(e.target.value);
+    e.target.value = raw ? formatNumber(raw) : "";
+  });
+
+  input.addEventListener("focus", (e) => {
+    e.target.value = stripNumber(e.target.value);
   });
 }
 
-attachFormatter(minPrice);
-attachFormatter(maxPrice);
+attachPriceFormatter(minPrice);
+attachPriceFormatter(maxPrice);
 
 // ==========================
 // Tabs
 // ==========================
 function setTab(type) {
   listingType = type;
+
   tabAll.classList.remove("active");
   tabAuction.classList.remove("active");
   tabFixed.classList.remove("active");
@@ -74,9 +92,13 @@ async function runSearch() {
     return;
   }
 
-  results.innerHTML = "Loading...";
+  results.innerHTML = "Loading…";
 
-  const params = new URLSearchParams({ q, type: listingType });
+  const params = new URLSearchParams({
+    q,
+    type: listingType,
+  });
+
   if (min) params.append("min", min);
   if (max) params.append("max", max);
 
@@ -109,7 +131,7 @@ function render(items) {
     card.className = "card";
 
     card.innerHTML = `
-      <img src="${item.image}">
+      <img src="${item.image}" />
       <h3>${item.title}</h3>
       <div class="price">${formatUSD(item.price)}</div>
       <a href="${item.link}" target="_blank">View</a>
