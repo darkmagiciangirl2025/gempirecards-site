@@ -1,89 +1,84 @@
-export default async function handler(req, res) {
-  try {
-    const {
-      q = "pokemon psa",
-      type = "all",
-      sort = "newlyListed",
-      min,
-      max,
-      page = 1,
-      limit = 50,
-    } = req.query;
+const state = {
+  q: "pokemon psa",
+  min: 0,
+  max: 0,
+  page: 1,
+  sort: "newlyListed",
+};
 
-    const offset = (page - 1) * limit;
-    const filters = [];
+const resultsEl = document.getElementById("results");
+const paginationEl = document.getElementById("pagination");
 
-    // ✅ PRICE FILTER
-    if (min || max) {
-      const minVal = min ? Number(min) : 0;
-      const maxVal = max ? Number(max) : "";
-      filters.push(`price:[${minVal}..${maxVal}]`);
-    }
+async function load() {
+  resultsEl.innerHTML = "Loading…";
+  paginationEl.innerHTML = "";
 
-    // Listing type
-    if (type === "auction") filters.push("buyingOptions:{AUCTION}");
-    if (type === "fixed") filters.push("buyingOptions:{FIXED_PRICE}");
+  const params = new URLSearchParams({
+    q: state.q,
+    min: state.min,
+    max: state.max,
+    page: state.page,
+    sort: state.sort,
+  });
 
-    const sortMap = {
-      newlyListed: "NEWLY_LISTED",
-      priceLow: "PRICE_PLUS_SHIPPING_LOWEST",
-      priceHigh: "PRICE_PLUS_SHIPPING_HIGHEST",
-    };
+  const res = await fetch(`/api/search?${params.toString()}`);
+  const data = await res.json();
 
-    const url = new URL(
-      "https://api.ebay.com/buy/browse/v1/item_summary/search"
-    );
-    url.searchParams.set("q", q);
-    url.searchParams.set("limit", limit);
-    url.searchParams.set("offset", offset);
-    url.searchParams.set("sort", sortMap[sort] || "NEWLY_LISTED");
-
-    if (filters.length) {
-      url.searchParams.set("filter", filters.join(","));
-    }
-
-    if (!process.env.EBAY_TOKEN) {
-      return res.status(500).json({
-        error: "EBAY_TOKEN missing",
-      });
-    }
-
-    const ebayRes = await fetch(url.toString(), {
-      headers: {
-        Authorization: `Bearer ${process.env.EBAY_TOKEN}`,
-      },
-    });
-
-    if (!ebayRes.ok) {
-      const text = await ebayRes.text();
-      return res.status(500).json({
-        error: "eBay API error",
-        details: text,
-      });
-    }
-
-    const data = await ebayRes.json();
-
-    const items = (data.itemSummaries || []).map((it) => ({
-      id: it.itemId,
-      title: it.title,
-      price: it.price?.value ? Number(it.price.value) : null,
-      currency: it.price?.currency || "USD",
-      image:
-        it.image?.imageUrl ||
-        it.thumbnailImages?.slice(-1)[0]?.imageUrl ||
-        "",
-      url: it.itemWebUrl,
-    }));
-
-    res.status(200).json({
-      total: data.total || 0,
-      items,
-    });
-  } catch (err) {
-    res.status(500).json({
-      error: "Server crash",
-      message: err.message,
-    });
+  if (!data.items.length) {
+    resultsEl.innerHTML = "No results";
+    return;
   }
+
+  resultsEl.innerHTML = data.items.map(item => `
+    <div class="card">
+      <img src="${item.image}" loading="lazy">
+      <div class="title">${item.title}</div>
+      <div class="price">$${item.price.toLocaleString()}</div>
+      <a href="${item.link}" target="_blank">View</a>
+    </div>
+  `).join("");
+
+  renderPagination(data.total);
 }
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / 50);
+  for (let i = 1; i <= Math.min(3, pages); i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i;
+    btn.onclick = () => {
+      state.page = i;
+      load();
+    };
+    paginationEl.appendChild(btn);
+  }
+
+  const next = document.createElement("button");
+  next.textContent = "Next";
+  next.onclick = () => {
+    state.page++;
+    load();
+  };
+  paginationEl.appendChild(next);
+}
+
+document.getElementById("searchBtn").onclick = () => {
+  state.q = document.getElementById("q").value;
+  state.page = 1;
+  load();
+};
+
+document.getElementById("applyFilters").onclick = () => {
+  state.min = Number(document.getElementById("minPrice").value) || 0;
+  state.max = Number(document.getElementById("maxPrice").value) || 0;
+  state.page = 1;
+  load();
+};
+
+document.getElementById("sort").onchange = (e) => {
+  state.sort = e.target.value;
+  state.page = 1;
+  load();
+};
+
+window.onload = load;
