@@ -1,12 +1,8 @@
-let cachedToken = null;
+let tokenCache = null;
 let tokenExpiry = 0;
 
 async function getToken(env) {
-  const now = Date.now();
-
-  if (cachedToken && now < tokenExpiry) {
-    return cachedToken;
-  }
+  if (tokenCache && Date.now() < tokenExpiry) return tokenCache;
 
   const auth = btoa(`${env.EBAY_CLIENT_ID}:${env.EBAY_CLIENT_SECRET}`);
 
@@ -19,46 +15,50 @@ async function getToken(env) {
     body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope",
   });
 
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error("Token error: " + text);
-  }
-
-  const data = await res.json();
-
-  cachedToken = data.access_token;
-  tokenExpiry = now + data.expires_in * 1000 - 60000;
-
-  return cachedToken;
+  const json = await res.json();
+  tokenCache = json.access_token;
+  tokenExpiry = Date.now() + json.expires_in * 1000 - 60000;
+  return tokenCache;
 }
 
 export async function onRequest({ request, env }) {
   const url = new URL(request.url);
+
   const q = url.searchParams.get("q") || "pokemon";
+  const min = url.searchParams.get("min");
+  const max = url.searchParams.get("max");
+  const type = url.searchParams.get("type"); // auction | fixed
 
   const token = await getToken(env);
 
-  const ebayUrl = new URL(
+  const ebayURL = new URL(
     "https://api.ebay.com/buy/browse/v1/item_summary/search"
   );
-  ebayUrl.searchParams.set("q", q);
-  ebayUrl.searchParams.set("limit", "24");
-  ebayUrl.searchParams.set("category_ids", "183454");
 
-  const ebayRes = await fetch(ebayUrl.toString(), {
+  ebayURL.searchParams.set("q", q);
+  ebayURL.searchParams.set("limit", "24");
+  ebayURL.searchParams.set("category_ids", "183454");
+
+  if (min) ebayURL.searchParams.set("filter", `price:[${min}..]`);
+  if (max) ebayURL.searchParams.set(
+    "filter",
+    `price:[..${max}]`
+  );
+
+  if (type === "auction") {
+    ebayURL.searchParams.set("filter", "buyingOptions:{AUCTION}");
+  }
+
+  if (type === "fixed") {
+    ebayURL.searchParams.set("filter", "buyingOptions:{FIXED_PRICE}");
+  }
+
+  const ebayRes = await fetch(ebayURL.toString(), {
     headers: {
       Authorization: `Bearer ${token}`,
       "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
     },
   });
-
-  if (!ebayRes.ok) {
-    const text = await ebayRes.text();
-    return new Response(
-      JSON.stringify({ error: "eBay error", details: text }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
-  }
 
   const data = await ebayRes.json();
 
