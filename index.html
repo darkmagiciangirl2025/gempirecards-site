@@ -1,90 +1,54 @@
-const state = {
-  q: "pokemon psa",
-  min: 0,
-  max: 0,
-  page: 1,
-  sort: "newlyListed",
-};
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Gempire Discovery</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
 
-const resultsEl = document.getElementById("results");
-const paginationEl = document.getElementById("pagination");
-const minInput = document.getElementById("minPrice");
-const maxInput = document.getElementById("maxPrice");
+  <main class="wrap">
+    <header class="header">
+      <h1>Gempire Discovery</h1>
+      <p>Search Pokémon cards across eBay</p>
 
-async function load() {
-  resultsEl.innerHTML = "Loading...";
-  paginationEl.innerHTML = "";
+      <div class="searchRow">
+        <input id="q" placeholder="pokemon psa" />
+        <button id="searchBtn">Search</button>
+      </div>
 
-  const params = new URLSearchParams({
-    q: state.q,
-    min: state.min,
-    max: state.max,
-    page: state.page,
-    sort: state.sort,
-  });
+      <div class="tabsRow">
+        <button class="tab active">All Items</button>
+      </div>
 
-  const res = await fetch(`/api/search?${params.toString()}`);
-  const data = await res.json();
+      <div class="sortRow">
+        <label>Sort by</label>
+        <select id="sort">
+          <option value="newlyListed">Newly Listed</option>
+          <option value="priceAsc">Price: Low → High</option>
+          <option value="priceDesc">Price: High → Low</option>
+        </select>
+      </div>
+    </header>
 
-  if (!data.items.length) {
-    resultsEl.innerHTML = "No results";
-    return;
-  }
+    <section class="content">
+      <aside class="filters">
+        <h3>Filters</h3>
+        <input id="minPrice" placeholder="Min $" />
+        <input id="maxPrice" placeholder="Max $" />
+        <button id="applyFilters">Apply</button>
+      </aside>
 
-  resultsEl.innerHTML = data.items
-    .map(
-      (i) => `
-    <div class="card">
-      <img src="${i.image}" loading="lazy" />
-      <div class="title">${i.title}</div>
-      <div class="price">$${i.price.toLocaleString()}</div>
-      <a href="${i.link}" target="_blank">View</a>
-    </div>
-  `
-    )
-    .join("");
+      <section>
+        <div id="results"></div>
+        <div id="pagination"></div>
+      </section>
+    </section>
+  </main>
 
-  renderPagination(data.total);
-}
+  <!-- 🔥 THIS IS THE MOST IMPORTANT LINE 🔥 -->
+  <script src="/index.js" defer></script>
 
-function renderPagination(total) {
-  const pages = Math.ceil(total / 50);
-  for (let i = 1; i <= Math.min(3, pages); i++) {
-    const btn = document.createElement("button");
-    btn.textContent = i;
-    btn.onclick = () => {
-      state.page = i;
-      load();
-    };
-    paginationEl.appendChild(btn);
-  }
-
-  const next = document.createElement("button");
-  next.textContent = "Next";
-  next.onclick = () => {
-    state.page++;
-    load();
-  };
-  paginationEl.appendChild(next);
-}
-
-document.getElementById("searchBtn").onclick = () => {
-  state.q = document.getElementById("q").value;
-  state.page = 1;
-  load();
-};
-
-document.getElementById("applyFilters").onclick = () => {
-  state.min = Number(minInput.value.replace(/,/g, "")) || 0;
-  state.max = Number(maxInput.value.replace(/,/g, "")) || 0;
-  state.page = 1;
-  load();
-};
-
-document.getElementById("sort").onchange = (e) => {
-  state.sort = e.target.value;
-  state.page = 1;
-  load();
-};
-
-window.onload = load;
+</body>
+</html>
