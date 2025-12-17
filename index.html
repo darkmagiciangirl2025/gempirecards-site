@@ -7,52 +7,47 @@
 </head>
 <body>
 
-  <header>
-    <h1>Gempire Discovery</h1>
-    <p>Search Pokémon cards across eBay</p>
+<header>
+  <h1>Gempire Discovery</h1>
+  <p>Search Pokémon cards across eBay</p>
 
-    <div class="search-bar">
-      <input id="searchInput" placeholder="charizard skyridge psa" />
-      <button id="searchBtn">Search</button>
-    </div>
+  <div class="search-bar">
+    <input id="searchInput" placeholder="charizard skyridge psa" />
+    <button id="searchBtn">Search</button>
+  </div>
 
-    <div class="tabs">
-      <span id="tabAll" class="active">All Items</span>
-      <span id="tabAuction">Auctions</span>
-      <span id="tabFixed">Fixed Price</span>
-    </div>
-  </header>
+  <div class="tabs">
+    <span id="tabAll" class="active">All Items</span>
+    <span id="tabAuction">Auctions</span>
+    <span id="tabFixed">Fixed Price</span>
+  </div>
+</header>
 
-  <main>
-    <aside class="filters">
-      <h3>Filters</h3>
+<main>
+  <aside class="filters">
+    <h3>Filters</h3>
 
-      <!-- PRICE RANGE -->
-      <div class="price-range">
-        <div class="price-input">
-          <span class="currency">$</span>
-          <input id="minPrice" placeholder="Min" inputmode="numeric" />
-        </div>
-
-        <span class="to">to</span>
-
-        <div class="price-input">
-          <span class="currency">$</span>
-          <input id="maxPrice" placeholder="Max" inputmode="numeric" />
-        </div>
-
-        <button id="applyPrice">→</button>
+    <!-- PRICE RANGE -->
+    <div class="price-range">
+      <div class="price-input">
+        <span class="currency">$</span>
+        <input id="minPrice" placeholder="Min" inputmode="numeric" />
       </div>
 
-      <label>Sold listings sort</label>
-      <select>
-        <option>Best Match</option>
-      </select>
-    </aside>
+      <span class="to">to</span>
 
-    <section id="results"></section>
-  </main>
+      <div class="price-input">
+        <span class="currency">$</span>
+        <input id="maxPrice" placeholder="Max" inputmode="numeric" />
+      </div>
 
-  <script src="app.js"></script>
+      <button id="applyPrice">→</button>
+    </div>
+  </aside>
+
+  <section id="results"></section>
+</main>
+
+<script src="app.js"></script>
 </body>
 </html>
