@@ -3,150 +3,93 @@
 <head>
 <meta charset="UTF-8" />
 <title>Gempire Discovery</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 
 <style>
-  body {
-    margin: 0;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-    background: radial-gradient(1200px 600px at top, #0b1a44, #020617);
-    color: #fff;
-  }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(1200px 600px at top, #0b1a44, #020617);
+  color: #fff;
+}
 
-  header {
-    padding: 32px;
-  }
+header { padding: 32px; }
 
-  h1 {
-    margin: 0 0 8px;
-    font-size: 32px;
-  }
+h1 { margin: 0 0 8px; font-size: 32px; }
+.subtitle { color: #9aa4d6; margin-bottom: 16px; }
 
-  .subtitle {
-    color: #9aa4d6;
-    margin-bottom: 16px;
-  }
+.search-row { display: flex; gap: 12px; }
+input[type="text"] {
+  flex: 1;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: none;
+  font-size: 16px;
+}
+button {
+  padding: 14px 22px;
+  border-radius: 10px;
+  border: none;
+  background: #5b6cff;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
 
-  .search-row {
-    display: flex;
-    gap: 12px;
-  }
+.tabs { display: flex; gap: 20px; padding: 0 32px 12px; }
+.tabs span { cursor: pointer; color: #9aa4d6; }
+.tabs .active { color: #fff; text-decoration: underline; }
 
-  input[type="text"] {
-    flex: 1;
-    padding: 14px 16px;
-    border-radius: 10px;
-    border: none;
-    font-size: 16px;
-  }
+.controls { padding: 0 32px 16px; display: flex; gap: 20px; }
 
-  button {
-    padding: 14px 22px;
-    border-radius: 10px;
-    border: none;
-    background: #5b6cff;
-    color: #fff;
-    font-weight: 600;
-    cursor: pointer;
-  }
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 32px;
+  padding: 0 32px 48px;
+}
 
-  .tabs {
-    display: flex;
-    gap: 20px;
-    padding: 0 32px 12px;
-    color: #9aa4d6;
-  }
+.filters {
+  position: sticky;
+  top: 20px;
+  background: rgba(255,255,255,0.04);
+  padding: 20px;
+  border-radius: 16px;
+}
 
-  .tabs span {
-    cursor: pointer;
-  }
+.price-row { display: flex; gap: 8px; align-items: center; }
+.price-row input {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
 
-  .tabs .active {
-    color: #fff;
-    text-decoration: underline;
-  }
+#results {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 24px;
+}
 
-  .sort-row {
-    padding: 0 32px 16px;
-  }
+.card {
+  background: rgba(255,255,255,0.05);
+  padding: 14px;
+  border-radius: 16px;
+}
 
-  .layout {
-    display: grid;
-    grid-template-columns: 260px 1fr;
-    gap: 32px;
-    padding: 0 32px 48px;
-  }
+.card img {
+  width: 100%;
+  border-radius: 12px;
+  background: #000;
+}
 
-  .filters {
-    position: sticky;
-    top: 20px;
-    background: rgba(255,255,255,0.04);
-    padding: 20px;
-    border-radius: 16px;
-  }
+.card h4 { font-size: 14px; margin: 10px 0 6px; }
+.price { font-weight: 700; margin-bottom: 6px; }
+.card a { color: #7da2ff; text-decoration: none; font-size: 14px; }
 
-  .filters h3 {
-    margin-top: 0;
-  }
-
-  .price-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .price-row input {
-    width: 100%;
-    padding: 10px;
-    border-radius: 8px;
-    border: none;
-  }
-
-  .apply-btn {
-    margin-top: 12px;
-    width: 100%;
-  }
-
-  #results {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 24px;
-  }
-
-  .card {
-    background: rgba(255,255,255,0.05);
-    padding: 14px;
-    border-radius: 16px;
-  }
-
-  .card img {
-    width: 100%;
-    border-radius: 12px;
-    object-fit: contain;
-    background: #000;
-  }
-
-  .card h4 {
-    font-size: 14px;
-    margin: 10px 0 6px;
-  }
-
-  .price {
-    font-weight: 700;
-    margin-bottom: 6px;
-  }
-
-  .card a {
-    color: #7da2ff;
-    font-size: 14px;
-    text-decoration: none;
-  }
-
-  @media (max-width: 900px) {
-    .layout {
-      grid-template-columns: 1fr;
-    }
-  }
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 
@@ -157,114 +100,94 @@
   <div class="subtitle">Search Pokémon cards across eBay</div>
 
   <div class="search-row">
-    <input id="query" type="text" placeholder="Search Pokémon PSA cards…" />
-    <button onclick="search()">Search</button>
+    <input id="query" type="text" />
+    <button onclick="load()">Search</button>
   </div>
 </header>
 
 <div class="tabs">
   <span class="active">All Items</span>
-  <span>Auctions</span>
-  <span>Fixed Price</span>
 </div>
 
-<div class="sort-row">
+<div class="controls">
   Sort by
-  <select id="sort" onchange="search()">
+  <select id="sort" onchange="render()">
     <option value="">Best Match</option>
-    <option value="price_asc">Price: Low → High</option>
-    <option value="price_desc">Price: High → Low</option>
-    <option value="newly_listed">Newly Listed</option>
+    <option value="asc">Price ↑</option>
+    <option value="desc">Price ↓</option>
   </select>
 </div>
 
 <div class="layout">
   <div class="filters">
     <h3>Filters</h3>
-
     <div class="price-row">
-      <input id="minPrice" placeholder="$ Min" />
+      <input id="min" placeholder="$ Min" />
       <span>to</span>
-      <input id="maxPrice" placeholder="$ Max" />
+      <input id="max" placeholder="$ Max" />
     </div>
-
-    <button class="apply-btn" onclick="search()">Apply</button>
+    <button style="margin-top:12px;width:100%" onclick="render()">Apply</button>
   </div>
 
   <div id="results"></div>
 </div>
 
 <script>
-  function formatMoney(n) {
-    return "$" + Number(n).toLocaleString("en-US");
+let allItems = [];
+
+const fmt = n => "$" + n.toLocaleString("en-US");
+const num = v => Number(v.replace(/[^0-9]/g,""));
+
+async function load() {
+  const q = document.getElementById("query").value || "pokemon psa";
+  document.getElementById("results").innerHTML = "Loading…";
+
+  const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+  const data = await res.json();
+
+  allItems = (data.items || []).map(i => ({
+    ...i,
+    priceNum: Number(i.price)
+  })).filter(i => !isNaN(i.priceNum));
+
+  render();
+}
+
+function render() {
+  const min = num(document.getElementById("min").value || "0");
+  const max = num(document.getElementById("max").value || "99999999");
+  const sort = document.getElementById("sort").value;
+
+  let items = allItems.filter(i => i.priceNum >= min && i.priceNum <= max);
+
+  if (sort === "asc") items.sort((a,b)=>a.priceNum-b.priceNum);
+  if (sort === "desc") items.sort((a,b)=>b.priceNum-a.priceNum);
+
+  const grid = document.getElementById("results");
+  grid.innerHTML = "";
+
+  if (!items.length) {
+    grid.innerHTML = "<p style='color:#9aa4d6'>No results</p>";
+    return;
   }
 
-  function cleanNumber(v) {
-    return v.replace(/[^0-9]/g, "");
-  }
-
-  function formatInput(el) {
-    const raw = cleanNumber(el.value);
-    el.value = raw ? formatMoney(raw) : "";
-  }
-
-  async function search() {
-    const grid = document.getElementById("results");
-    grid.innerHTML = "<p style='color:#9aa4d6'>Loading listings…</p>";
-
-    try {
-      const q = document.getElementById("query").value || "pokemon psa";
-      const min = cleanNumber(document.getElementById("minPrice").value);
-      const max = cleanNumber(document.getElementById("maxPrice").value);
-      const sort = document.getElementById("sort").value;
-
-      let url = `/api/search?q=${encodeURIComponent(q)}`;
-      if (min) url += `&min=${min}`;
-      if (max) url += `&max=${max}`;
-      if (sort) url += `&sort=${sort}`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      grid.innerHTML = "";
-
-      if (!data.items || data.items.length === 0) {
-        grid.innerHTML = "<p style='color:#9aa4d6'>No results found.</p>";
-        return;
-      }
-
-      data.items.forEach(item => {
-        const price = Number(item.price);
-        if (!price || isNaN(price)) return;
-
-        const img = item.image
-          ? item.image.replace(/s-l\d+/i, "s-l1600")
-          : "";
-
-        grid.innerHTML += `
-          <div class="card">
-            <img src="${img}" loading="lazy" />
-            <h4>${item.title}</h4>
-            <div class="price">${formatMoney(price)}</div>
-            <a href="${item.link}" target="_blank">View</a>
-          </div>
-        `;
-      });
-
-    } catch (e) {
-      console.error(e);
-      grid.innerHTML = "<p style='color:#ff6b6b'>Error loading listings.</p>";
-    }
-  }
-
-  document.getElementById("minPrice").addEventListener("input", e => formatInput(e.target));
-  document.getElementById("maxPrice").addEventListener("input", e => formatInput(e.target));
-
-  window.addEventListener("load", () => {
-    document.getElementById("query").value = "pokemon psa";
-    document.getElementById("minPrice").value = "$3,000";
-    search();
+  items.forEach(i => {
+    const img = i.image?.replace(/s-l\d+/i,"s-l1600");
+    grid.innerHTML += `
+      <div class="card">
+        <img src="${img}" />
+        <h4>${i.title}</h4>
+        <div class="price">${fmt(i.priceNum)}</div>
+        <a href="${i.link}" target="_blank">View</a>
+      </div>`;
   });
+}
+
+window.onload = () => {
+  document.getElementById("query").value = "pokemon psa";
+  document.getElementById("min").value = "$3,000";
+  load();
+};
 </script>
 
 </body>
