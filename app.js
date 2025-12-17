@@ -1,185 +1,280 @@
-// ==========================
-// Helpers
-// ==========================
-
-// For MIN/MAX inputs: digits only (no commas, no $)
-function stripDigits(val = "") {
-  return val.replace(/[^\d]/g, "");
-}
-
-function formatNumber(val) {
-  const num = Number(stripDigits(val));
-  if (!num) return "";
-  return num.toLocaleString("en-US");
-}
-
-// For LISTING prices: allow decimals + commas
-function parsePrice(val) {
-  if (val === null || val === undefined) return null;
-  if (typeof val === "number") return Number.isFinite(val) ? val : null;
-
-  const s = String(val).trim();
-
-  // Keep digits, comma, dot. Remove $ and other text.
-  const cleaned = s.replace(/[^0-9.,]/g, "");
-  if (!cleaned) return null;
-
-  // Remove thousands separators
-  const normalized = cleaned.replace(/,/g, "");
-
-  const num = parseFloat(normalized);
-  return Number.isFinite(num) ? num : null;
-}
-
-function formatUSD(val) {
-  const num = parsePrice(val);
-  if (num === null) return "—";
-
-  const hasCents = Math.round(num * 100) % 100 !== 0;
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: hasCents ? 2 : 0,
-    maximumFractionDigits: hasCents ? 2 : 0,
-  }).format(num);
-}
-
-// ==========================
-// DOM
-// ==========================
-const searchInput = document.getElementById("searchInput");
-const searchBtn = document.getElementById("searchBtn");
-const results = document.getElementById("results");
-
-const minPrice = document.getElementById("minPrice");
-const maxPrice = document.getElementById("maxPrice");
-const applyPrice = document.getElementById("applyPrice");
+const elQ = document.getElementById("q");
+const btnSearch = document.getElementById("searchBtn");
+const statusEl = document.getElementById("status");
+const gridEl = document.getElementById("grid");
 
 const tabAll = document.getElementById("tabAll");
 const tabAuction = document.getElementById("tabAuction");
 const tabFixed = document.getElementById("tabFixed");
 
-let listingType = "all";
+const sortEl = document.getElementById("sort");
 
-// ==========================
-// Price Input Formatting (Min/Max)
-// ==========================
-function attachPriceFormatter(input) {
-  input.addEventListener("input", (e) => {
-    e.target.value = stripDigits(e.target.value);
-  });
+const minEl = document.getElementById("minPrice");
+const maxEl = document.getElementById("maxPrice");
+const applyBtn = document.getElementById("applyBtn");
+const applyBtnBig = document.getElementById("applyBtnBig");
 
-  input.addEventListener("blur", (e) => {
-    const raw = stripDigits(e.target.value);
-    e.target.value = raw ? formatNumber(raw) : "";
-  });
+const pager = document.getElementById("pager");
+const prevPageBtn = document.getElementById("prevPage");
+const nextPageBtn = document.getElementById("nextPage");
+const p1 = document.getElementById("p1");
+const p2 = document.getElementById("p2");
+const p3 = document.getElementById("p3");
 
-  input.addEventListener("focus", (e) => {
-    e.target.value = stripDigits(e.target.value);
-  });
+const state = {
+  q: "pokemon psa",
+  type: "all",          // all | auction | fixed
+  sort: "newlyListed",  // newlyListed, bestMatch, price, priceDesc, endingSoonest
+  min: 3000,
+  max: null,
+  page: 1,
+  limit: 50,
+  total: 0,
+};
+
+function setActiveTab(type) {
+  state.type = type;
+  tabAll.classList.toggle("active", type === "all");
+  tabAuction.classList.toggle("active", type === "auction");
+  tabFixed.classList.toggle("active", type === "fixed");
 }
 
-attachPriceFormatter(minPrice);
-attachPriceFormatter(maxPrice);
-
-// ==========================
-// Tabs
-// ==========================
-function setTab(type) {
-  listingType = type;
-
-  tabAll.classList.remove("active");
-  tabAuction.classList.remove("active");
-  tabFixed.classList.remove("active");
-
-  if (type === "all") tabAll.classList.add("active");
-  if (type === "auction") tabAuction.classList.add("active");
-  if (type === "fixed") tabFixed.classList.add("active");
-
-  runSearch();
+function moneyFormat(n) {
+  if (n == null || !Number.isFinite(n)) return "";
+  return new Intl.NumberFormat("en-US").format(n);
 }
 
-tabAll.onclick = () => setTab("all");
-tabAuction.onclick = () => setTab("auction");
-tabFixed.onclick = () => setTab("fixed");
+function parseMoneyInput(str) {
+  if (!str) return null;
+  const digits = String(str).replace(/[^\d]/g, "");
+  if (!digits) return null;
+  return Number(digits);
+}
 
-// ==========================
-// Search
-// ==========================
-async function runSearch() {
-  const q = searchInput.value.trim();
-  if (!q) return;
+// Upgrade eBay image size if the URL includes s-l###
+// Example: .../s-l225.jpg -> .../s-l500.jpg
+function upgradeImage(url) {
+  if (!url) return "";
+  return url.replace(/s-l\d+/i, "s-l500");
+}
 
-  const min = Number(stripDigits(minPrice.value));
-  const max = Number(stripDigits(maxPrice.value));
+function formatPrice(value, currency = "USD") {
+  if (!Number.isFinite(value)) return "";
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency,
+      maximumFractionDigits: 0,
+    }).format(value);
+  } catch {
+    return `$${moneyFormat(value)}`;
+  }
+}
 
-  if (min && max && min > max) {
-    alert("Min price cannot be greater than Max price");
+function updateInputsFromState() {
+  elQ.value = state.q || "";
+  sortEl.value = state.sort || "newlyListed";
+
+  minEl.value = state.min != null ? moneyFormat(state.min) : "";
+  maxEl.value = state.max != null ? moneyFormat(state.max) : "";
+}
+
+function setStatus(msg) {
+  statusEl.textContent = msg || "";
+}
+
+function renderItems(items) {
+  gridEl.innerHTML = "";
+
+  if (!items || !items.length) {
+    gridEl.innerHTML = "";
+    setStatus("No results");
     return;
   }
 
-  results.innerHTML = "Loading…";
+  setStatus(
+    `Showing ${(state.page - 1) * state.limit + 1}-${Math.min(
+      state.page * state.limit,
+      state.total || state.page * state.limit
+    )} of ${state.total.toLocaleString()} results`
+  );
 
-  const params = new URLSearchParams({
-    q,
-    type: listingType,
-  });
-
-  if (min) params.append("min", min);
-  if (max) params.append("max", max);
-
-  const res = await fetch(`/api/search?${params.toString()}`);
-  const data = await res.json();
-
-  if (!data.items || !data.items.length) {
-    results.innerHTML = "No results found";
-    return;
-  }
-
-  render(data.items);
-}
-
-searchBtn.onclick = runSearch;
-applyPrice.onclick = runSearch;
-
-searchInput.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") runSearch();
-});
-
-// ==========================
-// Render
-// ==========================
-function render(items) {
-  results.innerHTML = "";
-
-  items.forEach((item) => {
+  for (const it of items) {
     const card = document.createElement("div");
     card.className = "card";
 
-    card.innerHTML = `
-      <img src="${item.image}" />
-      <h3>${item.title}</h3>
-      <div class="price">${formatUSD(item.price)}</div>
-      <a href="${item.link}" target="_blank">View</a>
-    `;
+    const thumb = document.createElement("div");
+    thumb.className = "thumb";
 
-    results.appendChild(card);
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.src = upgradeImage(it.image);
+    img.alt = it.title || "Listing";
+    thumb.appendChild(img);
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+
+    const title = document.createElement("div");
+    title.className = "title";
+    title.textContent = it.title || "";
+
+    const price = document.createElement("div");
+    price.className = "price";
+    price.textContent =
+      Number.isFinite(it.priceValue) ? formatPrice(it.priceValue, it.currency) : "";
+
+    const link = document.createElement("a");
+    link.className = "viewLink";
+    link.href = it.link || "#";
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = "View";
+
+    meta.appendChild(title);
+    meta.appendChild(price);
+    meta.appendChild(link);
+
+    card.appendChild(thumb);
+    card.appendChild(meta);
+
+    gridEl.appendChild(card);
+  }
+}
+
+function updatePager() {
+  const totalPages = Math.max(1, Math.ceil((state.total || 0) / state.limit));
+  pager.style.display = totalPages > 1 ? "flex" : "none";
+
+  prevPageBtn.disabled = state.page <= 1;
+  nextPageBtn.disabled = state.page >= totalPages;
+
+  // Show pages in blocks of 3: (1 2 3) (4 5 6) ...
+  const blockStart = Math.floor((state.page - 1) / 3) * 3 + 1;
+  const pages = [blockStart, blockStart + 1, blockStart + 2].map((p) =>
+    p <= totalPages ? p : null
+  );
+
+  const btns = [p1, p2, p3];
+  btns.forEach((btn, idx) => {
+    const p = pages[idx];
+    if (!p) {
+      btn.style.display = "none";
+      return;
+    }
+    btn.style.display = "inline-flex";
+    btn.textContent = String(p);
+    btn.classList.toggle("active", p === state.page);
+    btn.onclick = () => {
+      state.page = p;
+      runSearch();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
   });
 }
 
-// ==========================
-// AUTO SEARCH ON LOAD ✅
-// ==========================
-window.addEventListener("load", () => {
-  searchInput.value = "pokemon psa";
+async function runSearch() {
+  const params = new URLSearchParams();
+  params.set("q", state.q);
+  params.set("type", state.type);
+  params.set("sort", state.sort);
+  params.set("page", String(state.page));
+  params.set("limit", String(state.limit));
+  if (state.min != null) params.set("min", String(state.min));
+  if (state.max != null) params.set("max", String(state.max));
 
-  // Min price = 3000, formatted as 3,000
-  minPrice.value = formatNumber("3000");
-  maxPrice.value = "";
+  setStatus("Loading…");
+  gridEl.innerHTML = "";
 
-  listingType = "all";
-  tabAll.classList.add("active");
+  try {
+    const res = await fetch(`/api/search?${params.toString()}`);
+    const data = await res.json();
 
+    if (!res.ok || data?.error) {
+      setStatus("Error loading results");
+      return;
+    }
+
+    state.total = Number(data.total) || 0;
+
+    renderItems(data.items || []);
+    updatePager();
+  } catch (e) {
+    setStatus("Error loading results");
+  }
+}
+
+// --- Events
+
+btnSearch.addEventListener("click", () => {
+  state.q = elQ.value.trim() || "pokemon psa";
+  state.page = 1;
   runSearch();
 });
+
+elQ.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    state.q = elQ.value.trim() || "pokemon psa";
+    state.page = 1;
+    runSearch();
+  }
+});
+
+[tabAll, tabAuction, tabFixed].forEach((btn) => {
+  btn.addEventListener("click", () => {
+    setActiveTab(btn.dataset.type);
+    state.page = 1;
+    runSearch();
+  });
+});
+
+sortEl.addEventListener("change", () => {
+  state.sort = sortEl.value;
+  state.page = 1;
+  runSearch();
+});
+
+// money inputs: keep numeric state, show commas
+function bindMoneyInput(inputEl, key) {
+  inputEl.addEventListener("input", () => {
+    const n = parseMoneyInput(inputEl.value);
+    state[key] = n;
+    // live format (simple)
+    if (n != null) inputEl.value = moneyFormat(n);
+  });
+
+  inputEl.addEventListener("blur", () => {
+    const n = parseMoneyInput(inputEl.value);
+    state[key] = n;
+    inputEl.value = n != null ? moneyFormat(n) : "";
+  });
+}
+
+bindMoneyInput(minEl, "min");
+bindMoneyInput(maxEl, "max");
+
+function applyFilters() {
+  state.page = 1;
+  runSearch();
+}
+
+applyBtn.addEventListener("click", applyFilters);
+applyBtnBig.addEventListener("click", applyFilters);
+
+prevPageBtn.addEventListener("click", () => {
+  state.page = Math.max(1, state.page - 1);
+  runSearch();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+nextPageBtn.addEventListener("click", () => {
+  const totalPages = Math.max(1, Math.ceil((state.total || 0) / state.limit));
+  state.page = Math.min(totalPages, state.page + 1);
+  runSearch();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+});
+
+// --- Init: auto search on load (pokemon psa, min 3000, Newly Listed)
+setActiveTab(state.type);
+updateInputsFromState();
+runSearch();
