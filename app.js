@@ -1,59 +1,48 @@
 // ==========================
 // Helpers
 // ==========================
-const formatUSD = (value) => {
-  if (value === null || value === undefined || value === "") return "";
-  const num = Number(value.toString().replace(/[^0-9]/g, ""));
-  if (isNaN(num)) return "";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0
-  }).format(num);
+const formatComma = (value) => {
+  const num = Number(value.replace(/[^0-9]/g, ""));
+  if (!num) return "";
+  return num.toLocaleString("en-US");
 };
 
 const stripNumber = (val) => val.replace(/[^0-9]/g, "");
 
 // ==========================
-// DOM Elements
+// DOM
 // ==========================
 const searchInput = document.getElementById("searchInput");
 const searchBtn = document.getElementById("searchBtn");
-const resultsEl = document.getElementById("results");
+const results = document.getElementById("results");
 
-const minInput = document.getElementById("minPrice");
-const maxInput = document.getElementById("maxPrice");
+const minPrice = document.getElementById("minPrice");
+const maxPrice = document.getElementById("maxPrice");
+const applyPrice = document.getElementById("applyPrice");
 
 const tabAll = document.getElementById("tabAll");
 const tabAuction = document.getElementById("tabAuction");
 const tabFixed = document.getElementById("tabFixed");
 
-// ==========================
-// State
-// ==========================
-let listingType = "all"; // all | auction | fixed
+let listingType = "all";
 
 // ==========================
-// Input Formatting
+// Price Input Formatting
 // ==========================
-function attachCurrencyFormatter(input) {
+function attachFormatter(input) {
   input.addEventListener("input", (e) => {
     const raw = stripNumber(e.target.value);
-    if (!raw) {
-      e.target.value = "";
-      return;
-    }
-    e.target.value = formatUSD(raw);
+    e.target.value = raw ? formatComma(raw) : "";
   });
 }
 
-attachCurrencyFormatter(minInput);
-attachCurrencyFormatter(maxInput);
+attachFormatter(minPrice);
+attachFormatter(maxPrice);
 
 // ==========================
 // Tabs
 // ==========================
-function setActiveTab(type) {
+function setTab(type) {
   listingType = type;
   tabAll.classList.remove("active");
   tabAuction.classList.remove("active");
@@ -66,47 +55,45 @@ function setActiveTab(type) {
   runSearch();
 }
 
-tabAll?.addEventListener("click", () => setActiveTab("all"));
-tabAuction?.addEventListener("click", () => setActiveTab("auction"));
-tabFixed?.addEventListener("click", () => setActiveTab("fixed"));
+tabAll.onclick = () => setTab("all");
+tabAuction.onclick = () => setTab("auction");
+tabFixed.onclick = () => setTab("fixed");
 
 // ==========================
 // Search
 // ==========================
 async function runSearch() {
-  const query = searchInput.value.trim();
-  if (!query) return;
+  const q = searchInput.value.trim();
+  if (!q) return;
 
-  const min = stripNumber(minInput.value);
-  const max = stripNumber(maxInput.value);
+  const min = Number(stripNumber(minPrice.value));
+  const max = Number(stripNumber(maxPrice.value));
 
-  resultsEl.innerHTML = "<p>Loading...</p>";
+  if (min && max && min > max) {
+    alert("Min price cannot be greater than Max price");
+    return;
+  }
 
-  const params = new URLSearchParams({
-    q: query,
-    type: listingType
-  });
+  results.innerHTML = "Loading...";
 
+  const params = new URLSearchParams({ q, type: listingType });
   if (min) params.append("min", min);
   if (max) params.append("max", max);
 
-  try {
-    const res = await fetch(`/api/search?${params.toString()}`);
-    const data = await res.json();
+  const res = await fetch(`/api/search?${params.toString()}`);
+  const data = await res.json();
 
-    if (!data.items || data.items.length === 0) {
-      resultsEl.innerHTML = "<p>No results found</p>";
-      return;
-    }
-
-    renderResults(data.items);
-  } catch (err) {
-    console.error(err);
-    resultsEl.innerHTML = "<p>Error loading results</p>";
+  if (!data.items || !data.items.length) {
+    results.innerHTML = "No results found";
+    return;
   }
+
+  render(data.items);
 }
 
-searchBtn.addEventListener("click", runSearch);
+searchBtn.onclick = runSearch;
+applyPrice.onclick = runSearch;
+
 searchInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") runSearch();
 });
@@ -114,24 +101,20 @@ searchInput.addEventListener("keydown", (e) => {
 // ==========================
 // Render
 // ==========================
-function renderResults(items) {
-  resultsEl.innerHTML = "";
+function render(items) {
+  results.innerHTML = "";
 
   items.forEach(item => {
     const card = document.createElement("div");
     card.className = "card";
 
     card.innerHTML = `
-      <div class="card-image">
-        <img src="${item.image}" alt="${item.title}">
-      </div>
-      <div class="card-body">
-        <h3>${item.title}</h3>
-        <p class="price">${formatUSD(item.price)}</p>
-        <a href="${item.link}" target="_blank">View</a>
-      </div>
+      <img src="${item.image}">
+      <h3>${item.title}</h3>
+      <div class="price">$${Number(item.price).toLocaleString()}</div>
+      <a href="${item.link}" target="_blank">View</a>
     `;
 
-    resultsEl.appendChild(card);
+    results.appendChild(card);
   });
 }
