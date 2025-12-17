@@ -1,275 +1,82 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Gempire Discovery</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gempire Discovery</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg"></div>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Inter, system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at top, #0b1633, #020617 60%);
-      color: #fff;
-    }
+    <main class="wrap">
+      <header class="header">
+        <h1>Gempire Discovery</h1>
+        <p>Search Pokémon cards across eBay</p>
 
-    header {
-      padding: 28px;
-    }
+        <div class="searchRow">
+          <input id="q" type="text" placeholder="pokemon psa" autocomplete="off" />
+          <button id="searchBtn" class="btnPrimary">Search</button>
+        </div>
 
-    h1 {
-      margin: 0;
-      font-size: 28px;
-    }
+        <div class="tabsRow">
+          <button class="tab active" data-type="all" id="tabAll">All Items</button>
+          <button class="tab" data-type="auction" id="tabAuction">Auctions</button>
+          <button class="tab" data-type="fixed" id="tabFixed">Fixed Price</button>
+        </div>
 
-    .sub {
-      opacity: 0.8;
-      margin-top: 4px;
-    }
+        <div class="sortRow">
+          <label for="sort" class="sortLabel">Sort by</label>
+          <select id="sort" class="sortSelect">
+            <option value="newlyListed">Newly Listed</option>
+            <option value="endingSoonest">Ending Soonest</option>
+            <option value="price">Price: Low to High</option>
+            <option value="priceDesc">Price: High to Low</option>
+            <option value="bestMatch">Best Match</option>
+          </select>
+        </div>
+      </header>
 
-    .search-row {
-      display: flex;
-      gap: 12px;
-      margin-top: 16px;
-    }
+      <section class="content">
+        <aside class="filters sticky">
+          <div class="filtersCard">
+            <div class="filtersTitle">Filters</div>
 
-    .search-row input {
-      flex: 1;
-      padding: 14px 16px;
-      border-radius: 12px;
-      border: none;
-      font-size: 16px;
-    }
+            <div class="priceRow">
+              <div class="moneyInput">
+                <span class="moneyPrefix">$</span>
+                <input id="minPrice" inputmode="numeric" placeholder="Min" />
+              </div>
+              <div class="toText">to</div>
+              <div class="moneyInput">
+                <span class="moneyPrefix">$</span>
+                <input id="maxPrice" inputmode="numeric" placeholder="Max" />
+              </div>
 
-    .search-row button {
-      padding: 14px 22px;
-      border-radius: 12px;
-      border: none;
-      background: #5b6cff;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-    }
+              <button id="applyBtn" class="btnCircle" title="Apply">+</button>
+            </div>
 
-    .tabs {
-      display: flex;
-      gap: 20px;
-      margin-top: 18px;
-    }
+            <button id="applyBtnBig" class="btnPrimary btnBlock">Apply</button>
+          </div>
+        </aside>
 
-    .tabs span {
-      opacity: 0.6;
-      cursor: pointer;
-    }
+        <section class="results">
+          <div id="status" class="status"></div>
+          <div id="grid" class="grid"></div>
 
-    .tabs .active {
-      opacity: 1;
-      border-bottom: 2px solid #5b6cff;
-      padding-bottom: 4px;
-    }
+          <div class="pager" id="pager">
+            <button id="prevPage" class="btnGhost">Prev</button>
+            <div class="pageNums">
+              <button class="btnGhost pageBtn" id="p1">1</button>
+              <button class="btnGhost pageBtn" id="p2">2</button>
+              <button class="btnGhost pageBtn" id="p3">3</button>
+            </div>
+            <button id="nextPage" class="btnGhost">Next</button>
+          </div>
+        </section>
+      </section>
+    </main>
 
-    .layout {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 28px;
-      padding: 28px;
-    }
-
-    .filters {
-      position: sticky;
-      top: 24px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 16px;
-      padding: 16px;
-    }
-
-    .filters h3 {
-      margin-top: 0;
-    }
-
-    .price-row {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .price-row input {
-      width: 100%;
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      font-size: 14px;
-    }
-
-    .apply-btn {
-      margin-top: 12px;
-      width: 100%;
-      padding: 12px;
-      border-radius: 12px;
-      border: none;
-      background: #5b6cff;
-      color: #fff;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .sort-row {
-      margin-bottom: 16px;
-    }
-
-    select {
-      padding: 8px;
-      border-radius: 10px;
-      border: none;
-    }
-
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-      gap: 20px;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.05);
-      border-radius: 18px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card img {
-      width: 100%;
-      height: 260px;
-      object-fit: contain;
-      border-radius: 12px;
-      background: #000;
-    }
-
-    .title {
-      margin: 10px 0 6px;
-      font-size: 14px;
-      line-height: 1.3;
-    }
-
-    .price {
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .view {
-      color: #7aa2ff;
-      font-size: 14px;
-      text-decoration: none;
-    }
-
-    .empty {
-      opacity: 0.6;
-      font-size: 18px;
-    }
-  </style>
-</head>
-<body>
-
-<header>
-  <h1>Gempire Discovery</h1>
-  <div class="sub">Search Pokémon cards across eBay</div>
-
-  <div class="search-row">
-    <input id="query" value="pokemon psa" />
-    <button onclick="runSearch()">Search</button>
-  </div>
-
-  <div class="tabs">
-    <span class="active">All Items</span>
-    <span>Auctions</span>
-    <span>Fixed Price</span>
-  </div>
-</header>
-
-<div class="layout">
-  <aside class="filters">
-    <h3>Filters</h3>
-
-    <div class="price-row">
-      <input id="minPrice" placeholder="$ Min" />
-      <span>to</span>
-      <input id="maxPrice" placeholder="$ Max" />
-    </div>
-
-    <button class="apply-btn" onclick="runSearch()">Apply</button>
-  </aside>
-
-  <main>
-    <div class="sort-row">
-      Sort by
-      <select id="sort" onchange="runSearch()">
-        <option value="best">Best Match</option>
-        <option value="price_desc">Price: High → Low</option>
-        <option value="price_asc">Price: Low → High</option>
-        <option value="new">Newly Listed</option>
-      </select>
-    </div>
-
-    <div id="results" class="grid"></div>
-  </main>
-</div>
-
-<script>
-const API_BASE =
-  location.hostname === 'localhost'
-    ? 'http://localhost:8788'
-    : 'https://shop.gempirecards.com';
-
-function formatMoney(n) {
-  if (!n || isNaN(n)) return '';
-  return '$' + Number(n).toLocaleString();
-}
-
-function parseMoney(v) {
-  return Number(v.replace(/[^0-9.]/g, '')) || '';
-}
-
-function hdImage(url) {
-  return url ? url.replace('/s-l225.', '/s-l1200.') : '';
-}
-
-async function runSearch() {
-  const q = document.getElementById('query').value.trim();
-  const min = parseMoney(document.getElementById('minPrice').value);
-  const max = parseMoney(document.getElementById('maxPrice').value);
-  const sort = document.getElementById('sort').value;
-
-  const params = new URLSearchParams({
-    q,
-    min,
-    max,
-    sort
-  });
-
-  const res = await fetch(`${API_BASE}/api/search?${params}`);
-  const data = await res.json();
-
-  const grid = document.getElementById('results');
-  if (!data.items || data.items.length === 0) {
-    grid.innerHTML = '<div class="empty">No results</div>';
-    return;
-  }
-
-  grid.innerHTML = data.items.map(item => `
-    <div class="card">
-      <img src="${hdImage(item.image)}" loading="lazy" />
-      <div class="title">${item.title}</div>
-      <div class="price">${formatMoney(item.price)}</div>
-      <a class="view" href="${item.link}" target="_blank">View</a>
-    </div>
-  `).join('');
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('minPrice').value = '$3,000';
-  runSearch();
-});
-</script>
-
-</body>
+    <script src="./app.js"></script>
+  </body>
 </html>
