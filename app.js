@@ -1,48 +1,38 @@
-const resultsEl = document.getElementById("grid");
-const loadingEl = document.getElementById("loader");
-const searchBtn = document.getElementById("searchBtn");
-const searchInput = document.getElementById("searchInput");
+const grid = document.getElementById("grid");
+const loader = document.getElementById("loader");
+const input = document.getElementById("searchInput");
+const button = document.getElementById("searchBtn");
 
-async function search() {
-  const q = searchInput.value.trim() || "pokemon";
+async function runSearch() {
+  loader.style.display = "block";
+  grid.innerHTML = "";
 
-  loadingEl.style.display = "block";
-  resultsEl.innerHTML = "";
+  const q = input.value || "pokemon";
 
-  try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+  const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
+  const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(`API error ${res.status}`);
-    }
+  loader.style.display = "none";
 
-    const data = await res.json();
-    console.log("WORKER RESPONSE:", data);
+  console.log("UI DATA:", data);
 
-    const items = data.items || [];
+  if (!data.items || !data.items.length) {
+    grid.innerHTML = "<p>No results</p>";
+    return;
+  }
 
-    if (!items.length) {
-      resultsEl.innerHTML =
-        "<p style='opacity:.7'>No listings returned</p>";
-      return;
-    }
+  data.items.forEach((item) => {
+    const el = document.createElement("div");
+    el.className = "card";
+    el.innerHTML = `
+      <img src="${item.image}" />
+      <h4>${item.title}</h4>
+      <p>${item.price}</p>
+      <a href="${item.link}" target="_blank">View</a>
+    `;
+    grid.appendChild(el);
+  });
+}
 
-    items.forEach((item) => {
-      const card = document.createElement("div");
-      card.className = "card";
-
-      card.innerHTML = `
-        <img src="${item.image || ""}" />
-        <h4>${item.title}</h4>
-        <p class="price">${item.price || "—"}</p>
-        <a href="${item.link}" target="_blank" rel="noopener">
-          View on eBay
-        </a>
-      `;
-
-      resultsEl.appendChild(card);
-    });
-  } catch (err) {
-    console.error(err);
-    resultsEl.innerHTML =
-      "<p style='o
+button.onclick = runSearch;
+window.onload = runSearch;
