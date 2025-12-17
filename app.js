@@ -13,28 +13,17 @@ async function search() {
     const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
 
     if (!res.ok) {
-      throw new Error(`API returned ${res.status}`);
+      throw new Error(`API error ${res.status}`);
     }
 
     const data = await res.json();
-    console.log("RAW API RESPONSE:", data);
+    console.log("WORKER RESPONSE:", data);
 
-    // 🔑 normalize ALL possible response shapes
-    let items = [];
-
-    if (Array.isArray(data)) {
-      items = data;
-    } else if (Array.isArray(data.results)) {
-      items = data.results;
-    } else if (Array.isArray(data.items)) {
-      items = data.items;
-    }
-
-    console.log("NORMALIZED ITEMS COUNT:", items.length);
+    const items = data.items || [];
 
     if (!items.length) {
       resultsEl.innerHTML =
-        "<p style='opacity:.7'>No listings returned from eBay</p>";
+        "<p style='opacity:.7'>No listings returned</p>";
       return;
     }
 
@@ -42,34 +31,11 @@ async function search() {
       const card = document.createElement("div");
       card.className = "card";
 
-      const image =
-        item.img ||
-        item.image ||
-        item.image?.imageUrl ||
-        "https://via.placeholder.com/300x300?text=No+Image";
-
-      const price =
-        typeof item.price === "string"
-          ? item.price
-          : item.price?.value
-          ? `$${item.price.value}`
-          : item.currentPrice?.value
-          ? `$${item.currentPrice.value}`
-          : "—";
-
-      const link =
-        item.link ||
-        item.url ||
-        item.itemWebUrl ||
-        "#";
-
-      const title = item.title || "Untitled listing";
-
       card.innerHTML = `
-        <img src="${image}" alt="${title}" />
-        <h4>${title}</h4>
-        <p class="price">${price}</p>
-        <a href="${link}" target="_blank" rel="noopener">
+        <img src="${item.image || ""}" />
+        <h4>${item.title}</h4>
+        <p class="price">${item.price || "—"}</p>
+        <a href="${item.link}" target="_blank" rel="noopener">
           View on eBay
         </a>
       `;
@@ -77,14 +43,6 @@ async function search() {
       resultsEl.appendChild(card);
     });
   } catch (err) {
-    console.error("SEARCH FAILED:", err);
+    console.error(err);
     resultsEl.innerHTML =
-      "<p style='opacity:.7'>Error loading listings</p>";
-  } finally {
-    loadingEl.style.display = "none";
-  }
-}
-
-// EVENTS
-searchBtn.addEventListener("click", search);
-window.addEventListener("load", search);
+      "<p style='o
