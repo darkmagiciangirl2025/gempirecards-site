@@ -2,7 +2,9 @@ let tokenCache = null;
 let tokenExpiry = 0;
 
 async function getToken(env) {
-  if (tokenCache && Date.now() < tokenExpiry) return tokenCache;
+  if (tokenCache && Date.now() < tokenExpiry) {
+    return tokenCache;
+  }
 
   const auth = btoa(`${env.EBAY_CLIENT_ID}:${env.EBAY_CLIENT_SECRET}`);
 
@@ -14,6 +16,10 @@ async function getToken(env) {
     },
     body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope",
   });
+
+  if (!res.ok) {
+    throw new Error("Failed to get eBay token");
+  }
 
   const json = await res.json();
   tokenCache = json.access_token;
@@ -27,7 +33,7 @@ export async function onRequest({ request, env }) {
   const q = url.searchParams.get("q") || "pokemon";
   const min = url.searchParams.get("min");
   const max = url.searchParams.get("max");
-  const type = url.searchParams.get("type");
+  const type = url.searchParams.get("type"); // all | auction | fixed
 
   const token = await getToken(env);
 
@@ -39,13 +45,28 @@ export async function onRequest({ request, env }) {
   ebayURL.searchParams.set("limit", "24");
   ebayURL.searchParams.set("category_ids", "183454");
 
-  // ✅ BUILD FILTERS SAFELY
+  // ============================
+  // ✅ FILTER LOGIC (CORRECT)
+  // ============================
+
   const filters = [];
 
-  if (min || max) {
-    filters.push(`price:[${min || 0}..${max || ""}]`);
+  let minPrice = min ? Number(min) : null;
+  let maxPrice = max ? Number(max) : null;
+
+  // ✅ Auto-fix reversed ranges
+  if (minPrice && maxPrice && minPrice > maxPrice) {
+    [minPrice, maxPrice] = [maxPrice, minPrice];
   }
 
+  // ✅ Price filter (currency REQUIRED)
+  if (minPrice || maxPrice) {
+    filters.push(
+      `price:[${minPrice ?? 0}..${maxPrice ?? ""}],priceCurrency:USD`
+    );
+  }
+
+  // ✅ Auction / Fixed Price
   if (type === "auction") {
     filters.push("buyingOptions:{AUCTION}");
   }
@@ -58,12 +79,24 @@ export async function onRequest({ request, env }) {
     ebayURL.searchParams.set("filter", filters.join(","));
   }
 
+  // ============================
+  // eBay API CALL
+  // ============================
+
   const ebayRes = await fetch(ebayURL.toString(), {
     headers: {
       Authorization: `Bearer ${token}`,
       "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
     },
   });
+
+  if (!ebayRes.ok) {
+    const err = await ebayRes.text();
+    return new Response(
+      JSON.stringify({ error: "eBay API error", details: err }),
+      { status: 500 }
+    );
+  }
 
   const data = await ebayRes.json();
 
