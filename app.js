@@ -39,8 +39,7 @@ let listingType = "all";
 // ==========================
 function attachPriceFormatter(input) {
   input.addEventListener("input", (e) => {
-    const raw = stripNumber(e.target.value);
-    e.target.value = raw ? raw : "";
+    e.target.value = stripNumber(e.target.value);
   });
 
   input.addEventListener("blur", (e) => {
@@ -140,3 +139,20 @@ function render(items) {
     results.appendChild(card);
   });
 }
+
+// ==========================
+// AUTO SEARCH ON LOAD ✅
+// ==========================
+window.addEventListener("load", () => {
+  // Default experience
+  searchInput.value = "pokemon psa";
+
+  // Min price = 3000, formatted as 3,000
+  minPrice.value = formatNumber("3000");
+  maxPrice.value = "";
+
+  listingType = "all";
+  tabAll.classList.add("active");
+
+  runSearch();
+});
