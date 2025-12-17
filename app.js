@@ -1,13 +1,13 @@
 // ==========================
 // Helpers
 // ==========================
-const formatComma = (value) => {
-  const num = Number(value.replace(/[^0-9]/g, ""));
-  if (!num) return "";
-  return num.toLocaleString("en-US");
-};
-
 const stripNumber = (val) => val.replace(/[^0-9]/g, "");
+
+const formatUSD = (val) => {
+  const num = Number(stripNumber(val.toString()));
+  if (!num) return "—";
+  return `$${num.toLocaleString("en-US")}`;
+};
 
 // ==========================
 // DOM
@@ -27,12 +27,12 @@ const tabFixed = document.getElementById("tabFixed");
 let listingType = "all";
 
 // ==========================
-// Price Input Formatting
+// Input Formatting
 // ==========================
 function attachFormatter(input) {
   input.addEventListener("input", (e) => {
     const raw = stripNumber(e.target.value);
-    e.target.value = raw ? formatComma(raw) : "";
+    e.target.value = raw ? raw.toLocaleString("en-US") : "";
   });
 }
 
@@ -111,7 +111,7 @@ function render(items) {
     card.innerHTML = `
       <img src="${item.image}">
       <h3>${item.title}</h3>
-      <div class="price">$${Number(item.price).toLocaleString()}</div>
+      <div class="price">${formatUSD(item.price)}</div>
       <a href="${item.link}" target="_blank">View</a>
     `;
 
