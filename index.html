@@ -1,53 +1,319 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Gempire Discovery</title>
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="UTF-8" />
+<title>Gempire Discovery</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(circle at top, #0b1535, #020617 70%);
+  color: white;
+}
+
+header {
+  padding: 28px 40px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.subtitle {
+  color: #a5b4fc;
+  margin-top: 4px;
+}
+
+.search-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.search-row input {
+  flex: 1;
+  padding: 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+}
+
+.search-row button {
+  padding: 14px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #6366f1;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabs {
+  display: flex;
+  gap: 18px;
+  margin-top: 20px;
+  font-weight: 600;
+}
+
+.tabs span {
+  cursor: pointer;
+  color: #c7d2fe;
+}
+
+.tabs span.active {
+  color: white;
+  text-decoration: underline;
+}
+
+.sort-row {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sort-row select {
+  background: #0f172a;
+  color: white;
+  border: 1px solid #1e293b;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.main {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 30px;
+  padding: 30px 40px;
+}
+
+.filters {
+  background: rgba(255,255,255,0.04);
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.filters h3 {
+  margin-top: 0;
+}
+
+.price-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.price-input {
+  display: flex;
+  align-items: center;
+  background: #020617;
+  border-radius: 8px;
+  padding: 6px 10px;
+  border: 1px solid #1e293b;
+}
+
+.price-input span {
+  color: #94a3b8;
+  margin-right: 4px;
+}
+
+.price-input input {
+  width: 90px;
+  background: none;
+  border: none;
+  color: white;
+  outline: none;
+}
+
+.apply-btn {
+  margin-left: auto;
+  background: #6366f1;
+  border: none;
+  color: white;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: rgba(255,255,255,0.04);
+  padding: 14px;
+  border-radius: 14px;
+}
+
+.card img {
+  width: 100%;
+  border-radius: 10px;
+}
+
+.card h4 {
+  font-size: 14px;
+  margin: 10px 0 6px;
+}
+
+.card .price {
+  font-weight: 700;
+}
+
+.card a {
+  color: #60a5fa;
+  text-decoration: none;
+  font-size: 14px;
+}
+</style>
 </head>
+
 <body>
 
 <header>
   <h1>Gempire Discovery</h1>
-  <p>Search Pokémon cards across eBay</p>
+  <div class="subtitle">Search Pokémon cards across eBay</div>
 
-  <div class="search-bar">
-    <input id="searchInput" placeholder="charizard skyridge psa" />
-    <button id="searchBtn">Search</button>
+  <div class="search-row">
+    <input id="query" placeholder="Search Pokémon cards" />
+    <button onclick="runSearch()">Search</button>
   </div>
 
   <div class="tabs">
-    <span id="tabAll" class="active">All Items</span>
-    <span id="tabAuction">Auctions</span>
-    <span id="tabFixed">Fixed Price</span>
+    <span class="active" data-type="all">All Items</span>
+    <span data-type="auction">Auctions</span>
+    <span data-type="fixed">Fixed Price</span>
+  </div>
+
+  <div class="sort-row">
+    <label>Sort by</label>
+    <select id="sortSelect">
+      <option value="best">Best Match</option>
+      <option value="priceDesc">Price: High → Low</option>
+      <option value="priceAsc">Price: Low → High</option>
+    </select>
   </div>
 </header>
 
-<main>
+<div class="main">
   <aside class="filters">
     <h3>Filters</h3>
 
-    <!-- PRICE RANGE -->
-    <div class="price-range">
+    <div class="price-row">
       <div class="price-input">
-        <span class="currency">$</span>
-        <input id="minPrice" placeholder="Min" inputmode="numeric" />
+        <span>$</span>
+        <input id="minPrice" placeholder="Min" />
       </div>
-
-      <span class="to">to</span>
-
+      <span>to</span>
       <div class="price-input">
-        <span class="currency">$</span>
-        <input id="maxPrice" placeholder="Max" inputmode="numeric" />
+        <span>$</span>
+        <input id="maxPrice" placeholder="Max" />
       </div>
-
-      <button id="applyPrice">→</button>
+      <button class="apply-btn" onclick="runSearch()">›</button>
     </div>
   </aside>
 
-  <section id="results"></section>
-</main>
+  <section>
+    <div id="results" class="grid"></div>
+  </section>
+</div>
 
-<script src="app.js"></script>
+<script>
+const resultsEl = document.getElementById("results");
+const sortSelect = document.getElementById("sortSelect");
+let activeType = "all";
+let currentItems = [];
+
+document.querySelectorAll(".tabs span").forEach(tab => {
+  tab.onclick = () => {
+    document.querySelectorAll(".tabs span").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    activeType = tab.dataset.type;
+    runSearch();
+  };
+});
+
+sortSelect.addEventListener("change", applySort);
+
+function parsePrice(p) {
+  if (!p) return 0;
+  return Number(p.replace(/[^0-9.]/g, ""));
+}
+
+function formatPrice(n) {
+  return "$" + n.toLocaleString();
+}
+
+function formatInput(el) {
+  const raw = el.value.replace(/[^0-9]/g, "");
+  if (!raw) return "";
+  el.value = Number(raw).toLocaleString();
+}
+
+["minPrice","maxPrice"].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => formatInput(el));
+});
+
+async function runSearch() {
+  const q = document.getElementById("query").value.trim();
+  if (!q) return;
+
+  const min = parsePrice(document.getElementById("minPrice").value);
+  const max = parsePrice(document.getElementById("maxPrice").value);
+
+  let url = `/api/search?q=${encodeURIComponent(q)}`;
+  if (min) url += `&min=${min}`;
+  if (max) url += `&max=${max}`;
+  if (activeType !== "all") url += `&type=${activeType}`;
+
+  const res = await fetch(url);
+  const data = await res.json();
+  currentItems = data.items || [];
+  applySort();
+}
+
+function applySort() {
+  let items = [...currentItems];
+  const sort = sortSelect.value;
+
+  if (sort === "priceAsc") {
+    items.sort((a,b) => parsePrice(a.price) - parsePrice(b.price));
+  }
+  if (sort === "priceDesc") {
+    items.sort((a,b) => parsePrice(b.price) - parsePrice(a.price));
+  }
+
+  render(items);
+}
+
+function render(items) {
+  resultsEl.innerHTML = "";
+  items.forEach(item => {
+    const priceNum = parsePrice(item.price);
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <img src="${item.image}" />
+      <h4>${item.title}</h4>
+      <div class="price">${formatPrice(priceNum)}</div>
+      <a href="${item.link}" target="_blank">View</a>
+    `;
+    resultsEl.appendChild(card);
+  });
+}
+
+/* AUTO LOAD */
+window.onload = () => {
+  document.getElementById("query").value = "pokemon psa";
+  document.getElementById("minPrice").value = "3,000";
+  runSearch();
+};
+</script>
+
 </body>
 </html>
