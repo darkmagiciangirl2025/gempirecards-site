@@ -1,30 +1,66 @@
-const resultsEl = document.getElementById("results");
-const loadingEl = document.getElementById("loading");
+const resultsEl = document.getElementById("grid");
+const loadingEl = document.getElementById("loader");
 const searchBtn = document.getElementById("searchBtn");
 const searchInput = document.getElementById("searchInput");
 
 async function search() {
   const q = searchInput.value || "pokemon";
+
   loadingEl.style.display = "block";
   resultsEl.innerHTML = "";
 
-  const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
-  const data = await res.json();
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
 
-  loadingEl.style.display = "none";
+    if (!res.ok) {
+      throw new Error(`API error: ${res.status}`);
+    }
 
-  data.results.forEach((item) => {
-    const card = document.createElement("div");
-    card.className = "card";
-    card.innerHTML = `
-      <img src="${item.img || ""}" />
-      <h4>${item.title}</h4>
-      <p>${item.price}</p>
-      <a href="${item.link}" target="_blank">View on eBay</a>
-    `;
-    resultsEl.appendChild(card);
-  });
+    const data = await res.json();
+
+    // Support both backend shapes
+    const items = data.results || data.items || [];
+
+    if (!items.length) {
+      resultsEl.innerHTML = "<p>No results found</p>";
+      return;
+    }
+
+    items.forEach((item) => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const image =
+        item.img ||
+        item.image ||
+        item.image?.imageUrl ||
+        "https://via.placeholder.com/300x300?text=No+Image";
+
+      const price =
+        typeof item.price === "object"
+          ? `$${item.price.value}`
+          : item.price || "—";
+
+      const link = item.link || item.url || "#";
+
+      card.innerHTML = `
+        <img src="${image}" />
+        <h4>${item.title}</h4>
+        <p class="price">${price}</p>
+        <a href="${link}" target="_blank" rel="noopener">View on eBay</a>
+      `;
+
+      resultsEl.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Search failed:", err);
+    resultsEl.innerHTML =
+      "<p style='opacity:.7'>Error loading results</p>";
+  } finally {
+    loadingEl.style.display = "none";
+  }
 }
 
+// EVENTS
 searchBtn.addEventListener("click", search);
 window.addEventListener("load", search);
