@@ -1,58 +1,62 @@
-export async function onRequest(context) {
-  const { request, params } = context;
-  const url = new URL(request.url);
-  const endpoint = params.path;
+let cachedToken = null;
+let tokenExpiry = 0;
 
-  // Only handle /api/search
-  if (endpoint !== "search") {
-    return new Response(JSON.stringify({ error: "Not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
+async function getToken(env) {
+  const now = Date.now();
+
+  if (cachedToken && now < tokenExpiry) {
+    return cachedToken;
   }
 
-  const q = url.searchParams.get("q") || "pokemon";
-  const minPrice = url.searchParams.get("minPrice");
-  const maxPrice = url.searchParams.get("maxPrice");
-  const sold = url.searchParams.get("sold") === "true";
-  const sort = url.searchParams.get("sort") || "BestMatch";
+  const auth = btoa(`${env.EBAY_CLIENT_ID}:${env.EBAY_CLIENT_SECRET}`);
 
-  const ebayParams = new URLSearchParams({
-    _nkw: q,
-    _sop: sort === "PricePlusShippingLowest" ? "15" : "12",
-    LH_Sold: sold ? "1" : "0",
-    LH_Complete: sold ? "1" : "0",
-    _ipg: "60",
+  const res = await fetch("https://api.ebay.com/identity/v1/oauth2/token", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${auth}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope",
   });
 
-  if (minPrice) ebayParams.set("_udlo", minPrice);
-  if (maxPrice) ebayParams.set("_udhi", maxPrice);
+  const data = await res.json();
 
-  const ebayURL = `https://www.ebay.com/sch/i.html?${ebayParams.toString()}`;
+  cachedToken = data.access_token;
+  tokenExpiry = now + data.expires_in * 1000 - 60000;
 
-  const res = await fetch(ebayURL, {
+  return cachedToken;
+}
+
+export async function onRequest({ request, env }) {
+  const url = new URL(request.url);
+  const q = url.searchParams.get("q") || "pokemon";
+
+  const token = await getToken(env);
+
+  const ebayUrl = new URL(
+    "https://api.ebay.com/buy/browse/v1/item_summary/search"
+  );
+  ebayUrl.searchParams.set("q", q);
+  ebayUrl.searchParams.set("limit", "24");
+  ebayUrl.searchParams.set("category_ids", "183454");
+
+  const ebayRes = await fetch(ebayUrl.toString(), {
     headers: {
-      "User-Agent": "Mozilla/5.0",
+      Authorization: `Bearer ${token}`,
+      "X-EBAY-C-MARKETPLACE-ID": "EBAY_US",
     },
   });
 
-  const html = await res.text();
+  const data = await ebayRes.json();
 
-  // VERY BASIC scrape (safe fallback)
-  const items = [...html.matchAll(/<li class="s-item.*?<\/li>/gs)].slice(0, 60);
+  const items = (data.itemSummaries || []).map((item) => ({
+    title: item.title,
+    price: `$${item.price?.value}`,
+    image: item.image?.imageUrl,
+    link: item.itemWebUrl,
+  }));
 
-  const results = items.map((block) => {
-    const title = block[0].match(/class="s-item__title">([^<]+)/)?.[1];
-    const price = block[0].match(/\$[\d,]+(\.\d{2})?/i)?.[0];
-    const link = block[0].match(/href="(https:\/\/www\.ebay\.com\/itm\/[^"]+)"/)?.[1];
-    const img = block[0].match(/img src="([^"]+)"/)?.[1];
-
-    if (!title || !price || !link) return null;
-
-    return { title, price, link, img };
-  }).filter(Boolean);
-
-  return new Response(JSON.stringify({ results }), {
+  return new Response(JSON.stringify({ items }), {
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*",
