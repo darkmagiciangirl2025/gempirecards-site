@@ -4,7 +4,7 @@ const searchBtn = document.getElementById("searchBtn");
 const searchInput = document.getElementById("searchInput");
 
 async function search() {
-  const q = searchInput.value || "pokemon";
+  const q = searchInput.value.trim() || "pokemon";
 
   loadingEl.style.display = "block";
   resultsEl.innerHTML = "";
@@ -13,16 +13,28 @@ async function search() {
     const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`);
 
     if (!res.ok) {
-      throw new Error(`API error ${res.status}`);
+      throw new Error(`API returned ${res.status}`);
     }
 
     const data = await res.json();
-    console.log("API DATA:", data); // keep for verification
+    console.log("RAW API RESPONSE:", data);
 
-    const items = data.results || data.items || [];
+    // 🔑 normalize ALL possible response shapes
+    let items = [];
+
+    if (Array.isArray(data)) {
+      items = data;
+    } else if (Array.isArray(data.results)) {
+      items = data.results;
+    } else if (Array.isArray(data.items)) {
+      items = data.items;
+    }
+
+    console.log("NORMALIZED ITEMS COUNT:", items.length);
 
     if (!items.length) {
-      resultsEl.innerHTML = "<p>No results found</p>";
+      resultsEl.innerHTML =
+        "<p style='opacity:.7'>No listings returned from eBay</p>";
       return;
     }
 
@@ -33,6 +45,7 @@ async function search() {
       const image =
         item.img ||
         item.image ||
+        item.image?.imageUrl ||
         "https://via.placeholder.com/300x300?text=No+Image";
 
       const price =
@@ -40,13 +53,21 @@ async function search() {
           ? item.price
           : item.price?.value
           ? `$${item.price.value}`
+          : item.currentPrice?.value
+          ? `$${item.currentPrice.value}`
           : "—";
 
-      const link = item.link || item.url || "#";
+      const link =
+        item.link ||
+        item.url ||
+        item.itemWebUrl ||
+        "#";
+
+      const title = item.title || "Untitled listing";
 
       card.innerHTML = `
-        <img src="${image}" />
-        <h4>${item.title}</h4>
+        <img src="${image}" alt="${title}" />
+        <h4>${title}</h4>
         <p class="price">${price}</p>
         <a href="${link}" target="_blank" rel="noopener">
           View on eBay
@@ -56,9 +77,9 @@ async function search() {
       resultsEl.appendChild(card);
     });
   } catch (err) {
-    console.error("Search failed:", err);
+    console.error("SEARCH FAILED:", err);
     resultsEl.innerHTML =
-      "<p style='opacity:.7'>Error loading results</p>";
+      "<p style='opacity:.7'>Error loading listings</p>";
   } finally {
     loadingEl.style.display = "none";
   }
