@@ -3,60 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <title>Gempire Discovery</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <header class="header">
+
+  <header>
     <h1>Gempire Discovery</h1>
     <p>Search Pokémon cards across eBay</p>
 
-    <div class="search-row">
-      <input
-        id="searchInput"
-        type="text"
-        placeholder="pokemon psa"
-        autocomplete="off"
-      />
-      <button id="searchBtn" type="button">Search</button>
+    <div class="search-bar">
+      <input id="searchInput" placeholder="charizard skyridge psa" />
+      <button id="searchBtn">Search</button>
     </div>
 
     <div class="tabs">
-      <button class="tab active" data-type="all">All Items</button>
-      <button class="tab" data-type="auction">Auctions</button>
-      <button class="tab" data-type="fixed">Fixed Price</button>
+      <span id="tabAll" class="active">All Items</span>
+      <span id="tabAuction">Auctions</span>
+      <span id="tabFixed">Fixed Price</span>
     </div>
   </header>
 
-  <main class="layout">
+  <main>
     <aside class="filters">
       <h3>Filters</h3>
 
-      <label for="minPrice">Min Price</label>
-      <input id="minPrice" type="number" placeholder="0" />
+      <!-- PRICE RANGE -->
+      <div class="price-range">
+        <div class="price-input">
+          <span class="currency">$</span>
+          <input id="minPrice" placeholder="Min" inputmode="numeric" />
+        </div>
 
-      <label for="maxPrice">Max Price</label>
-      <input id="maxPrice" type="number" placeholder="1000" />
+        <span class="to">to</span>
 
-      <label class="checkbox">
-        <input type="checkbox" id="soldToggle" />
-        Sold listings
-      </label>
+        <div class="price-input">
+          <span class="currency">$</span>
+          <input id="maxPrice" placeholder="Max" inputmode="numeric" />
+        </div>
 
-      <label for="sortSelect">Sort</label>
-      <select id="sortSelect">
-        <option value="best">Best Match</option>
-        <option value="price_asc">Price ↑</option>
-        <option value="price_desc">Price ↓</option>
-        <option value="newest">Newest</option>
+        <button id="applyPrice">→</button>
+      </div>
+
+      <label>Sold listings sort</label>
+      <select>
+        <option>Best Match</option>
       </select>
     </aside>
 
-    <section class="results">
-      <div id="grid" class="grid"></div>
-      <div id="loader" class="loading">Loading…</div>
-    </section>
+    <section id="results"></section>
   </main>
 
   <script src="app.js"></script>
