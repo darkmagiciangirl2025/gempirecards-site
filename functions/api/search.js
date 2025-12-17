@@ -27,7 +27,7 @@ export async function onRequest({ request, env }) {
   const q = url.searchParams.get("q") || "pokemon";
   const min = url.searchParams.get("min");
   const max = url.searchParams.get("max");
-  const type = url.searchParams.get("type"); // auction | fixed
+  const type = url.searchParams.get("type");
 
   const token = await getToken(env);
 
@@ -39,18 +39,23 @@ export async function onRequest({ request, env }) {
   ebayURL.searchParams.set("limit", "24");
   ebayURL.searchParams.set("category_ids", "183454");
 
-  if (min) ebayURL.searchParams.set("filter", `price:[${min}..]`);
-  if (max) ebayURL.searchParams.set(
-    "filter",
-    `price:[..${max}]`
-  );
+  // ✅ BUILD FILTERS SAFELY
+  const filters = [];
+
+  if (min || max) {
+    filters.push(`price:[${min || 0}..${max || ""}]`);
+  }
 
   if (type === "auction") {
-    ebayURL.searchParams.set("filter", "buyingOptions:{AUCTION}");
+    filters.push("buyingOptions:{AUCTION}");
   }
 
   if (type === "fixed") {
-    ebayURL.searchParams.set("filter", "buyingOptions:{FIXED_PRICE}");
+    filters.push("buyingOptions:{FIXED_PRICE}");
+  }
+
+  if (filters.length) {
+    ebayURL.searchParams.set("filter", filters.join(","));
   }
 
   const ebayRes = await fetch(ebayURL.toString(), {
